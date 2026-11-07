@@ -17,7 +17,7 @@ const browser = await puppeteer.launch({
   args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--hide-scrollbars'],
 });
 
-async function open(path, theme, width = 1200, height = 1000) {
+async function open(path, theme, width = 801, height = 1000) {
   const page = await browser.newPage();
   await page.setViewport({ width, height, deviceScaleFactor: 2 });
   await page.evaluateOnNewDocument((t) => localStorage.setItem('theme', t), theme);
@@ -38,7 +38,7 @@ for (const id of ids) {
     const stage = await page.$('.stage');
 
     const full = await stage.screenshot();
-    await sharp(full).resize(1600).webp({ quality: 78 }).toFile(`public/posters/${id}-${theme}.webp`);
+    await sharp(full).webp({ quality: 78 }).toFile(`public/posters/${id}-${theme}.webp`);
 
     // Thumbnails read better without labels.
     await page.addStyleTag({ content: '.labels{display:none!important}' });
