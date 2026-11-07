@@ -50,6 +50,7 @@ export const facemesh: RScene = {
     {
       id: 'code',
       label: '256 numbers',
+      pin: 0.12,
       sub: 'describe the face',
       kind: 'queue',
       x: 0.8,
@@ -120,6 +121,7 @@ export const facemesh: RScene = {
     {
       id: 'usd',
       label: 'USD export',
+      pin: 2.2,
       sub: 'opens in Blender',
       x: 14.4,
       z: 1.2,

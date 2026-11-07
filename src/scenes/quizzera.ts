@@ -6,7 +6,7 @@ export const quizzera: RScene = {
   cta: 'Generate a quiz',
   camera: { az: -0.56, el: 0.64 },
   zones: [
-    { label: 'Vercel', x: -2.6, z: 0.2, w: 7.4, d: 8.6 },
+    { label: 'Vercel', x: -2.2, z: 0.2, w: 8.4, d: 8.6 },
     { label: 'Gemini, with fallback', x: 6.4, z: -6, w: 7, d: 3.6 },
     { label: 'Supabase', x: 7.2, z: 3.4, w: 4.2, d: 7.8 },
   ],
@@ -60,10 +60,11 @@ export const quizzera: RScene = {
     {
       id: 'review',
       label: 'Spaced repetition',
+      pin: 0.4,
       sub: 'SM-2',
       kind: 'box',
-      x: -0.8,
-      z: 2.4,
+      x: 0.2,
+      z: 2.6,
       w: 2.7,
       d: 2.1,
       h: 0.55,

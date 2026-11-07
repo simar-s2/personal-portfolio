@@ -116,6 +116,7 @@ export const kbsync: RScene = {
     {
       id: 'app',
       label: 'Menu bar app',
+      pin: 1.5,
       sub: 'SwiftUI',
       x: 13.2,
       z: -1.6,
