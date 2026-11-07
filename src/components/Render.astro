@@ -226,6 +226,9 @@ const parts = scene.nodes.map((n) => n.label).join(', ');
   .cap-link:hover {
     color: var(--fg);
   }
+  .cap-link[hidden] {
+    display: none;
+  }
   .ctrl {
     flex: none;
   }
