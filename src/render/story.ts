@@ -1,7 +1,7 @@
 // The panel under a render: the caption, what a clicked block does, and the walkthrough.
 
 import type { Focus } from './focus';
-import type { RScene } from './types';
+import type { REntry, RScene } from './types';
 
 const STEP_MS = 6500;
 
@@ -16,13 +16,16 @@ export class Story {
   private count: HTMLElement | null;
   private toggle: HTMLButtonElement | null;
   private auto = false;
-  private defaultTags: Record<string, string>;
+  private rest: HTMLElement | null;
+  private caseLink: HTMLAnchorElement | null;
+  private repoLink: HTMLAnchorElement | null;
+  private scene!: RScene;
+  private focus!: Focus;
+  private repo: string | undefined;
+  private defaultTags: Record<string, string> = {};
 
   constructor(
     root: HTMLElement,
-    private scene: RScene,
-    private focus: Focus,
-    private repo: string | undefined,
     private onChange: (tags: Record<string, string>) => void,
   ) {
     const q = <T extends HTMLElement>(s: string) => root.querySelector<T>(s);
@@ -33,7 +36,9 @@ export class Story {
     this.nav = q('.nav');
     this.count = q('.count');
     this.toggle = q<HTMLButtonElement>('.step-toggle');
-    this.defaultTags = Object.fromEntries(scene.nodes.filter((n) => n.tag).map((n) => [n.id, n.tag!]));
+    this.rest = q('.rest');
+    this.caseLink = q<HTMLAnchorElement>('[data-case-link]');
+    this.repoLink = q<HTMLAnchorElement>('[data-repo-link]');
 
     this.cta?.addEventListener('click', () => this.play());
     q('.step-prev')?.addEventListener('click', () => this.manual(this.index - 1));
@@ -44,6 +49,30 @@ export class Story {
       this.schedule();
       this.syncToggle();
     });
+  }
+
+  // Point the panel at a project. Used once on a case study, and on every tab on the home page.
+  load(entry: REntry, focus: Focus): void {
+    this.scene = entry.scene;
+    this.focus = focus;
+    this.repo = entry.repo;
+    this.defaultTags = Object.fromEntries(entry.scene.nodes.filter((n) => n.tag).map((n) => [n.id, n.tag!]));
+    if (this.cta) {
+      this.cta.textContent = `▶ ${entry.scene.cta ?? 'Walk through it'}`;
+      this.cta.dataset.umamiEventProject = entry.id;
+    }
+    if (this.caseLink && entry.href) {
+      this.caseLink.href = entry.href;
+      this.caseLink.dataset.umamiEventProject = entry.id;
+    }
+    if (this.repoLink) {
+      this.repoLink.hidden = !entry.repo;
+      if (entry.repo) {
+        this.repoLink.href = entry.repo;
+        this.repoLink.dataset.umamiEventProject = entry.id;
+      }
+    }
+    this.reset();
   }
 
   private write(title: string, text: string, href?: string, hrefText?: string): void {
@@ -58,7 +87,7 @@ export class Story {
   }
 
   private showControls(walking: boolean): void {
-    if (this.cta) this.cta.hidden = walking;
+    if (this.rest) this.rest.hidden = walking;
     if (this.nav) this.nav.hidden = !walking;
   }
 

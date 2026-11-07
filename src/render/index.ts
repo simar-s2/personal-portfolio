@@ -1,24 +1,27 @@
-// Starts a render: sizing, the frame loop and pointer controls.
+// Starts a render: sizing, the frame loop, pointer controls and switching between projects.
 
-import { build } from './build';
+import { build, type Built } from './build';
 import { Camera } from './camera';
 import { Focus } from './focus';
 import { Labels } from './labels';
 import { palettes, Renderer } from './renderer';
 import { Story } from './story';
-import type { RScene } from './types';
+import type { REntry, RScene } from './types';
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 
+// How long the home page shows each project before moving to the next.
+const TOUR_SECONDS = 9;
+
 export function mount(root: HTMLElement): void {
-  const scene = JSON.parse(root.querySelector('[data-scene]')!.textContent!) as RScene;
+  const entries = JSON.parse(root.querySelector('[data-scenes]')!.textContent!) as REntry[];
   const stage = root.querySelector<HTMLElement>('.stage')!;
   const canvas = stage.querySelector('canvas')!;
-  const built = build(scene);
+  const labelHost = stage.querySelector<HTMLElement>('.labels')!;
 
   let renderer: Renderer;
   try {
-    renderer = new Renderer(canvas, built);
+    renderer = new Renderer(canvas);
   } catch (error) {
     console.warn('Keeping the static image:', error);
     return; // The poster image stays in place.
@@ -26,33 +29,62 @@ export function mount(root: HTMLElement): void {
 
   const still = location.search.includes('still');
   const calm = still || matchMedia('(prefers-reduced-motion: reduce)').matches;
-
   const cam = new Camera();
-  cam.az = scene.camera?.az ?? cam.az;
-  cam.el = scene.camera?.el ?? cam.el;
-  cam.zoom = scene.camera?.zoom ?? cam.zoom;
-  const home = { az: cam.az, el: cam.el };
 
-  const focus = new Focus(scene, built);
-  const states = { block: renderer.blockState, curve: renderer.curveState, packet: renderer.packetState };
-
+  let scene: RScene = entries[0]!.scene;
+  let built: Built;
+  let focus: Focus;
+  let labels: Labels;
+  let states = { block: renderer.blockState, curve: renderer.curveState, packet: renderer.packetState };
+  let home = { az: cam.az, el: cam.el };
   let dirty = true;
   let forceStates = true;
+  let touched = false;
+  let swing = 0;
+  let spinAz = 0;
+  let spinEl = 0;
+
   const refresh = () => {
     dirty = true;
   };
 
-  const story = new Story(root, scene, focus, root.dataset.repo, (tags) => {
+  const story = new Story(root, (tags) => {
     labels.setTags(tags);
     refresh();
   });
-  const labels = new Labels(stage.querySelector<HTMLElement>('.labels')!, scene, built, {
-    hover(i) {
-      focus.hover = i;
-      focus.retarget();
-    },
-    pick: (i) => story.select(i),
-  });
+
+  const cache = new Map<string, Built>();
+  const load = (entry: REntry) => {
+    scene = entry.scene;
+    built = cache.get(entry.id) ?? build(scene);
+    cache.set(entry.id, built);
+    renderer.load(built);
+    states = { block: renderer.blockState, curve: renderer.curveState, packet: renderer.packetState };
+    focus = new Focus(scene, built);
+    labels?.destroy();
+    labels = new Labels(labelHost, scene, built, {
+      hover(i) {
+        focus.hover = i;
+        focus.retarget();
+      },
+      pick: (i) => story.select(i),
+    });
+    story.load(entry, focus);
+
+    cam.az = scene.camera?.az ?? -0.62;
+    cam.el = scene.camera?.el ?? 0.62;
+    cam.zoom = scene.camera?.zoom ?? 1;
+    home = { az: cam.az, el: cam.el };
+    touched = false;
+    spinAz = spinEl = 0;
+    forceStates = true;
+    refresh();
+
+    const parts = scene.nodes.map((n) => n.label).join(', ');
+    canvas.setAttribute('aria-label', `3D architecture of ${entry.title}. Parts: ${parts}.`);
+    stage.style.setProperty('view-transition-name', `${entry.id}-render`);
+  };
+  load(entries[0]!);
 
   // Size
   let width = 0;
@@ -77,10 +109,51 @@ export function mount(root: HTMLElement): void {
     attributeFilter: ['data-theme'],
   });
 
+  // Tabs. Until someone interacts, the home page moves through the projects on its own,
+  // so a visitor sees all five without having to look for them.
+  const tabs = [...root.querySelectorAll<HTMLButtonElement>('[data-tab]')];
+  const bars = tabs.map((tab) => tab.querySelector<HTMLElement>('.tab-bar'));
+  let current = 0;
+  let swapTimer = 0;
+  let touring = tabs.length > 1 && !calm;
+  let hovering = false;
+  let tour = 0;
+
+  const stopTour = () => {
+    if (!touring) return;
+    touring = false;
+    bars.forEach((bar) => bar?.style.removeProperty('transform'));
+  };
+  const select = (i: number) => {
+    if (i === current) return;
+    current = i;
+    tour = 0;
+    tabs.forEach((tab, j) => {
+      tab.setAttribute('aria-selected', String(j === i));
+      bars[j]?.style.removeProperty('transform');
+    });
+    clearTimeout(swapTimer);
+    stage.classList.add('swapping');
+    swapTimer = window.setTimeout(
+      () => {
+        load(entries[i]!);
+        swing = calm ? 0 : 0.24;
+        stage.classList.remove('swapping');
+      },
+      calm ? 0 : 170,
+    );
+  };
+  tabs.forEach((tab, i) => tab.addEventListener('click', () => select(i)));
+  root.addEventListener('pointerdown', stopTour);
+  root.addEventListener('keydown', stopTour);
+  root.addEventListener('pointerenter', (e) => {
+    if (e.pointerType === 'mouse') hovering = true;
+  });
+  root.addEventListener('pointerleave', () => {
+    hovering = false;
+  });
+
   // Pointer
-  let touched = false;
-  let spinAz = 0;
-  let spinEl = 0;
   let drag: { x: number; y: number; moved: boolean } | null = null;
 
   const pick = (x: number, y: number): number | null => {
@@ -204,6 +277,13 @@ export function mount(root: HTMLElement): void {
       }
     }
 
+    if (touring && !hovering) {
+      tour += dt;
+      const bar = bars[current];
+      if (bar) bar.style.transform = `scaleX(${Math.min(tour / TOUR_SECONDS, 1).toFixed(3)})`;
+      if (tour >= TOUR_SECONDS) select((current + 1) % entries.length);
+    }
+
     const statesMoved = focus.tick(dt, states, forceStates);
     if (statesMoved) {
       renderer.writeStates();
@@ -223,7 +303,9 @@ export function mount(root: HTMLElement): void {
     if (!calm) {
       time += dt;
       if (!touched) {
-        cam.az = home.az + Math.sin(time * 0.17) * 0.09;
+        // A new scene swings gently into place, then keeps drifting.
+        swing *= Math.exp(-dt * 2.6);
+        cam.az = home.az + swing + Math.sin(time * 0.17) * 0.09;
         cam.el = home.el + Math.sin(time * 0.11) * 0.018;
       }
     }
@@ -266,7 +348,6 @@ export function mount(root: HTMLElement): void {
     root.classList.remove('ready'); // Fall back to the poster image.
   });
 
-  story.reset();
   // A link can open straight into the walkthrough.
   if (location.hash === '#play') {
     story.play();
