@@ -16,7 +16,7 @@ const browser = await puppeteer.launch({
   args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--hide-scrollbars'],
 });
 const page = await browser.newPage();
-await page.setViewport({ width: +width, height: +height, deviceScaleFactor: 2 });
+await page.setViewport({ width: +width, height: +height, deviceScaleFactor: +(process.env.SHOOT_SCALE ?? 2) });
 page.on('pageerror', (e) => console.log('PAGE ERROR', e.message));
 page.on('console', (m) => {
   if (['error', 'warn'].includes(m.type())) console.log(m.type().toUpperCase(), m.text());

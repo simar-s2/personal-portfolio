@@ -17,7 +17,7 @@ const browser = await puppeteer.launch({
   args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--hide-scrollbars'],
 });
 
-async function open(path, theme, width = 801, height = 720) {
+async function open(path, theme, width = 1200, height = 1000) {
   const page = await browser.newPage();
   await page.setViewport({ width, height, deviceScaleFactor: 2 });
   await page.evaluateOnNewDocument((t) => localStorage.setItem('theme', t), theme);
@@ -30,7 +30,7 @@ for (const id of ids) {
   for (const theme of ['dark', 'light']) {
     const page = await open(`projects/${id}/?still`, theme);
     await page.addStyleTag({
-      content: '.hint,.dock,.dock-fade{display:none!important}.poster{display:none!important}[data-reveal]{transition:none!important;opacity:1!important;transform:none!important}',
+      content: '.hint,.dock,.dock-fade,.tabs{display:none!important}.poster{display:none!important}[data-reveal]{transition:none!important;opacity:1!important;transform:none!important}',
     });
     await page.evaluate(() => document.querySelector('[data-render]').scrollIntoView({ block: 'start' }));
     await page.waitForFunction('window.__renderReady === true', { timeout: 30000 });
@@ -38,13 +38,12 @@ for (const id of ids) {
     const stage = await page.$('.stage');
 
     const full = await stage.screenshot();
-    await sharp(full).webp({ quality: 80 }).toFile(`public/posters/${id}-${theme}.webp`);
+    await sharp(full).resize(1600).webp({ quality: 78 }).toFile(`public/posters/${id}-${theme}.webp`);
 
     // Thumbnails read better without labels.
     await page.addStyleTag({ content: '.labels{display:none!important}' });
     await new Promise((r) => setTimeout(r, 150));
     const bare = await stage.screenshot();
-    await sharp(bare).resize(320, 320, { fit: 'cover' }).webp({ quality: 78 }).toFile(`public/posters/${id}-thumb-${theme}.webp`);
     await sharp(bare).resize(480, 312, { fit: 'cover' }).webp({ quality: 78 }).toFile(`public/posters/${id}-tile-${theme}.webp`);
     if (theme === 'dark') {
       await sharp(full).resize(1200, 630, { fit: 'cover' }).jpeg({ quality: 82 }).toFile(`public/og/${id}.jpg`);
