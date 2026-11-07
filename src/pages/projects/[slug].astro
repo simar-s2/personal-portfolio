@@ -28,7 +28,7 @@ const sections = ['Results', 'Problem', 'What I built', ...headings.filter((h) =
   {
     scene && (
       <div data-reveal="hero">
-        <Render id={entry.id} title={p.title} scene={scene} repo={p.repo} />
+        <Render entries={[{ id: entry.id, title: p.title, repo: p.repo, scene }]} />
       </div>
     )
   }
