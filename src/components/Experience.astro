@@ -1,0 +1,63 @@
+---
+import Ph from './Ph.astro';
+import { experience } from '../data/site';
+---
+
+<section class="sec" id="experience" data-reveal style="--i:4">
+  <h2>Experience</h2>
+  <ul class="jobs">
+    {
+      experience.map((job) => (
+        <li>
+          <div class="row">
+            <p>
+              <Ph text={job.title} />
+              <span class="at"> · </span>
+              {job.url ? (
+                <a class="link" href={job.url} target="_blank" rel="noopener">
+                  {job.org}
+                </a>
+              ) : (
+                job.org
+              )}
+            </p>
+            <p class="when">{job.when}</p>
+          </div>
+          {job.note && <p class="note">{job.note}</p>}
+          <p class="muted text">{job.text}</p>
+        </li>
+      ))
+    }
+  </ul>
+</section>
+
+<style>
+  .jobs {
+    display: grid;
+    gap: 22px;
+  }
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0 16px;
+  }
+  .at {
+    color: var(--faint);
+  }
+  .when {
+    color: var(--muted);
+    font-size: 12.5px;
+    line-height: 24px;
+    white-space: nowrap;
+  }
+  .note {
+    font-size: 12.5px;
+    color: var(--faint);
+  }
+  .text {
+    max-width: 62ch;
+    font-size: 14px;
+    margin-top: 1px;
+  }
+</style>
