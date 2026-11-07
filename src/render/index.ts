@@ -27,11 +27,9 @@ export function mount(root: HTMLElement): void {
   const still = location.search.includes('still');
   const calm = still || matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  const cam = new Camera(built.radius, built.height);
-  cam.target = [built.center[0], built.height * 0.24, built.center[1]];
+  const cam = new Camera();
   cam.az = scene.camera?.az ?? cam.az;
   cam.el = scene.camera?.el ?? cam.el;
-  cam.fitEl = cam.el;
   cam.zoom = scene.camera?.zoom ?? cam.zoom;
   const home = { az: cam.az, el: cam.el };
 
@@ -66,6 +64,7 @@ export function mount(root: HTMLElement): void {
     height = box.height;
     canvas.width = Math.max(1, Math.round(width * dpr));
     canvas.height = Math.max(1, Math.round(height * dpr));
+    cam.fit(built.bounds, width / Math.max(height, 1));
     labels.measure();
     refresh();
   };
@@ -232,7 +231,7 @@ export function mount(root: HTMLElement): void {
 
     if (calm && !dirty && !statesMoved && !spinning) return;
     dirty = false;
-    cam.update(width / Math.max(height, 1));
+    cam.update();
     labels.place(cam, width, height);
     renderer.draw(cam, still ? 0.37 : time, palette(), width);
     if (!root.classList.contains('ready')) {
@@ -268,5 +267,10 @@ export function mount(root: HTMLElement): void {
   });
 
   story.reset();
+  // A link can open straight into the walkthrough.
+  if (location.hash === '#play') {
+    story.play();
+    if (!calm) root.scrollIntoView({ block: 'center' });
+  }
   (window as unknown as { __story?: Story }).__story = story;
 }

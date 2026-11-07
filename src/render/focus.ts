@@ -28,6 +28,8 @@ export class Focus {
     this.ids = new Map(scene.nodes.map((node, i) => [node.id, i]));
     this.edgeIds = new Map(scene.edges.map((edge, i) => [`${edge.from}>${edge.to}`, i]));
     this.retarget();
+    this.node.set(this.nodeTo);
+    this.edge.set(this.edgeTo);
   }
 
   get nodes(): Float32Array {
@@ -83,10 +85,9 @@ export class Focus {
       return;
     }
 
-    // Quiet wires stay dark until something lights them.
-    for (let i = 0; i < e; i++) {
-      edgeTo[i * 2 + 1] = scene.edges[i]!.quiet ? 0.86 : 0;
-    }
+    // Nothing in focus. Quiet wires stay hidden and their packets don't run.
+    for (let i = 0; i < n; i++) nodeTo[i * 4 + 1] = scene.nodes[i]!.glow ?? 0;
+    for (let i = 0; i < e; i++) edgeTo[i * 2 + 1] = scene.edges[i]!.quiet ? 1 : 0;
   }
 
   // Moves everything toward its target and fills the GPU arrays. True if anything changed.

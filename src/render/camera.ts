@@ -20,10 +20,10 @@ const TAN = Math.tan(FOV / 2);
 export class Camera {
   az = -0.62;
   el = 0.62;
-  fitEl = 0.62; // the fit uses the starting angle, so dragging never changes the zoom
   zoom = 1;
   dist = 30;
   aspect = 1.6;
+  depth = 20;
   target: V = [0, 0.4, 0];
   eye: V = [0, 0, 0];
   right: V = [1, 0, 0];
@@ -32,36 +32,69 @@ export class Camera {
   vp = new Float32Array(16);
   scale: [number, number] = [1, 1]; // projection scale, used to size billboards
 
-  constructor(
-    private radius: number,
-    private height: number,
-  ) {}
+  private basis(az: number, el: number): [V, V, V, V] {
+    const ce = Math.cos(el);
+    const offset: V = [ce * Math.sin(az), Math.sin(el), ce * Math.cos(az)];
+    const forward = norm([-offset[0], -offset[1], -offset[2]]);
+    const right = norm(cross(forward, [0, 1, 0]));
+    return [offset, right, cross(right, forward), forward];
+  }
 
-  update(aspect: number): void {
+  // Frames the scene from the starting angle. Dragging later never changes the zoom.
+  fit(points: Float32Array, aspect: number): void {
     this.aspect = aspect;
-    // Far enough back that the scene fits both across and down.
-    const across = this.radius / (TAN * aspect);
-    const down = (this.radius * Math.sin(this.fitEl) + this.height * 0.8) / TAN;
-    this.dist = (Math.max(across, down) * 1.04) / this.zoom;
-
-    const ce = Math.cos(this.el);
-    const offset: V = [ce * Math.sin(this.az), Math.sin(this.el), ce * Math.cos(this.az)];
-    this.eye = [
-      this.target[0] + offset[0] * this.dist,
-      this.target[1] + offset[1] * this.dist,
-      this.target[2] + offset[2] * this.dist,
+    const [, r, u, f] = this.basis(this.az, this.el);
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+    let minZ = Infinity;
+    let maxZ = -Infinity;
+    for (let i = 0; i < points.length; i += 3) {
+      const p: V = [points[i]!, points[i + 1]!, points[i + 2]!];
+      const x = dot(r, p);
+      const y = dot(u, p);
+      const z = dot(f, p);
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y);
+      maxY = Math.max(maxY, y);
+      minZ = Math.min(minZ, z);
+      maxZ = Math.max(maxZ, z);
+    }
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+    const cz = (minZ + maxZ) / 2;
+    this.target = [
+      r[0] * cx + u[0] * cy + f[0] * cz,
+      r[1] * cx + u[1] * cy + f[1] * cz,
+      r[2] * cx + u[2] * cy + f[2] * cz,
     ];
-    this.forward = norm(sub(this.target, this.eye));
-    this.right = norm(cross(this.forward, [0, 1, 0]));
-    this.up = cross(this.right, this.forward);
+    const halfZ = (maxZ - minZ) / 2;
+    const across = (maxX - minX) / 2 / (TAN * aspect) + halfZ;
+    const down = (maxY - minY) / 2 / TAN + halfZ;
+    this.dist = Math.max(across, down) * 1.03;
+    this.depth = Math.max(maxX - minX, maxY - minY, maxZ - minZ);
+  }
+
+  update(): void {
+    const [offset, r, u, w] = this.basis(this.az, this.el);
+    const dist = this.dist / this.zoom;
+    this.eye = [
+      this.target[0] + offset[0] * dist,
+      this.target[1] + offset[1] * dist,
+      this.target[2] + offset[2] * dist,
+    ];
+    this.forward = w;
+    this.right = r;
+    this.up = u;
 
     const f = 1 / TAN;
-    const near = Math.max(0.1, this.dist - this.radius * 2.5);
-    const far = this.dist + this.radius * 3;
-    const a = f / aspect;
+    const near = Math.max(0.5, dist - this.depth * 1.5);
+    const far = dist + this.depth * 2;
+    const a = f / this.aspect;
     const c = (far + near) / (near - far);
     const d = (2 * far * near) / (near - far);
-    const [r, u, w] = [this.right, this.up, this.forward];
     const tx = -dot(r, this.eye);
     const ty = -dot(u, this.eye);
     const tz = dot(w, this.eye);

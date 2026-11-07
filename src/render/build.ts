@@ -14,9 +14,9 @@ export interface Built {
   packetOwner: Int32Array; // an edge index, or -1 - node index for a point in a cloud
   anchors: Float32Array; // where each node's label sits
   aabb: Float32Array; // for picking
+  bounds: Float32Array; // points the camera has to keep in frame
   center: [number, number];
   radius: number;
-  height: number;
 }
 
 const size = (n: RNode) => ({
@@ -170,7 +170,7 @@ export function build(scene: RScene): Built {
     }
 
     const top = y + h + (kind === 'keyboard' ? 0.1 : 0);
-    const pin = n.pin ?? 0.5;
+    const pin = n.pin ?? 0.72;
     tops[ni] = top;
     anchors.push(n.x, top + pin, n.z);
     aabb.push(n.x - w / 2, y, n.z - d / 2, n.x + w / 2, top, n.z + d / 2);
@@ -190,18 +190,26 @@ export function build(scene: RScene): Built {
     const bend = e.bend ?? 0;
     const lift = e.arc ?? Math.min(0.32 * len + 0.5, 2.3);
     const peak = Math.max(tops[ia]!, tops[ib]!) + lift;
+    // Leave from a point on the top face toward the target, like a port, not the center.
+    const port = (n: RNode, sign: number): [number, number] => {
+      const { w, d } = size(n);
+      const reach = Math.min(w, d) * 0.3;
+      return [n.x + (sign * dx * reach) / len + nx * bend * 0.3, n.z + (sign * dz * reach) / len + nz * bend * 0.3];
+    };
+    const [ax, az] = port(a, 1);
+    const [bx, bz] = port(b, -1);
     const points = [
-      a.x, tops[ia]!, a.z,
+      ax, tops[ia]!, az,
       a.x + dx * 0.24 + nx * bend, peak, a.z + dz * 0.24 + nz * bend,
       b.x - dx * 0.24 + nx * bend, peak, b.z - dz * 0.24 + nz * bend,
-      b.x, tops[ib]!, b.z,
+      bx, tops[ib]!, bz,
     ];
     curves.push(...points);
-    curveAlpha.push(0.42);
+    curveAlpha.push(e.quiet ? 0 : 0.5);
     curveOwner.push(ei);
     const count = Math.max(1, Math.min(3, Math.round(len / 3.5)));
     for (let i = 0; i < count; i++) {
-      packets.push(...points, ((i / count + ei * 0.137) % 1), 0.2 / Math.max(1, len / 5), 0.085);
+      packets.push(...points, ((i / count + ei * 0.137) % 1), 0.2 / Math.max(1, len / 5), 0.1);
       packetOwner.push(ei);
     }
   });
@@ -213,30 +221,39 @@ export function build(scene: RScene): Built {
     const z = anchors[ni * 3 + 2]!;
     const y0 = tops[ni]!;
     curves.push(x, y0, z, x, y0 + (y1 - y0) / 3, z, x, y0 + ((y1 - y0) * 2) / 3, z, x, y1, z);
-    curveAlpha.push(0.28);
+    curveAlpha.push(0.3);
     curveOwner.push(-1 - ni);
   });
 
   const zones = (scene.zones ?? []).flatMap((z) => [z.x, z.z, z.w / 2, z.d / 2]);
 
-  // Fit the camera to everything, including zones.
+  // Everything the camera has to keep in frame.
+  const bounds: number[] = [];
   let minX = Infinity;
   let maxX = -Infinity;
   let minZ = Infinity;
   let maxZ = -Infinity;
-  let height = 1;
+  const addPoint = (x: number, y: number, z: number) => {
+    bounds.push(x, y, z);
+    minX = Math.min(minX, x);
+    maxX = Math.max(maxX, x);
+    minZ = Math.min(minZ, z);
+    maxZ = Math.max(maxZ, z);
+  };
   for (let i = 0; i < aabb.length; i += 6) {
-    minX = Math.min(minX, aabb[i]!);
-    maxX = Math.max(maxX, aabb[i + 3]!);
-    minZ = Math.min(minZ, aabb[i + 2]!);
-    maxZ = Math.max(maxZ, aabb[i + 5]!);
-    height = Math.max(height, anchors[(i / 6) * 3 + 1]!);
+    for (const x of [aabb[i]!, aabb[i + 3]!]) {
+      for (const z of [aabb[i + 2]!, aabb[i + 5]!]) {
+        addPoint(x, 0, z);
+        addPoint(x, aabb[i + 4]!, z);
+      }
+    }
   }
+  // Leave room above each anchor for the label itself.
+  for (let i = 0; i < anchors.length; i += 3) addPoint(anchors[i]!, anchors[i + 1]! + 0.55, anchors[i + 2]!);
   for (let i = 0; i < zones.length; i += 4) {
-    minX = Math.min(minX, zones[i]! - zones[i + 2]!);
-    maxX = Math.max(maxX, zones[i]! + zones[i + 2]!);
-    minZ = Math.min(minZ, zones[i + 1]! - zones[i + 3]!);
-    maxZ = Math.max(maxZ, zones[i + 1]! + zones[i + 3]!);
+    for (const sx of [-1, 1]) {
+      for (const sz of [-1, 1]) addPoint(zones[i]! + sx * zones[i + 2]!, 0, zones[i + 1]! + sz * zones[i + 3]!);
+    }
   }
 
   return {
@@ -251,8 +268,8 @@ export function build(scene: RScene): Built {
     packetOwner: new Int32Array(packetOwner),
     anchors: new Float32Array(anchors),
     aabb: new Float32Array(aabb),
+    bounds: new Float32Array(bounds),
     center: [(minX + maxX) / 2, (minZ + maxZ) / 2],
-    radius: Math.hypot(maxX - minX, maxZ - minZ) * 0.46,
-    height,
+    radius: Math.hypot(maxX - minX, maxZ - minZ) * 0.5,
   };
 }

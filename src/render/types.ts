@@ -27,6 +27,7 @@ export interface RNode {
   kind?: NodeKind;
   tone?: number;
   tag?: string; // a role shown next to the label, like "leader"
+  glow?: number; // lit in the accent color when nothing else is going on
   pin?: number; // how far above the block its label floats
   fill?: number[]; // for bins: the width of each job, as a share of the bin
   info: string; // shown when the block is clicked

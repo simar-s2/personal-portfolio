@@ -16,6 +16,7 @@ interface Item {
 
 export class Labels {
   private items: Item[];
+  private zones: { el: HTMLElement; x: number; z: number }[];
 
   constructor(
     host: HTMLElement,
@@ -47,6 +48,15 @@ export class Labels {
       host.append(el);
       return { el, tag, w: 0, h: 0, x: 0, y: 0, depth: 0 };
     });
+    this.zones = (scene.zones ?? [])
+      .filter((zone) => zone.label)
+      .map((zone) => {
+        const el = document.createElement('span');
+        el.className = 'rz';
+        el.textContent = zone.label!;
+        host.append(el);
+        return { el, x: zone.x - zone.w / 2 + 0.3, z: zone.z + zone.d / 2 - 0.05 };
+      });
     this.setTags(Object.fromEntries(scene.nodes.filter((n) => n.tag).map((n) => [n.id, n.tag!])));
     this.measure();
     document.fonts?.ready.then(() => this.measure());
@@ -79,6 +89,10 @@ export class Labels {
 
   place(cam: Camera, width: number, height: number): void {
     const a = this.built.anchors;
+    for (const zone of this.zones) {
+      const [x, y] = cam.project(zone.x, 0, zone.z, width, height);
+      zone.el.style.transform = `translate(${x.toFixed(1)}px,${(y + 2).toFixed(1)}px)`;
+    }
     this.items.forEach((item, i) => {
       const [x, y, depth] = cam.project(a[i * 3]!, a[i * 3 + 1]!, a[i * 3 + 2]!, width, height);
       item.x = Math.max(item.w / 2 + 4, Math.min(width - item.w / 2 - 4, x));

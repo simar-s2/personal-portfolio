@@ -21,15 +21,15 @@ export interface Palette {
 
 export const palettes: Record<'dark' | 'light', Palette> = {
   dark: {
-    base: [0.2, 0.2, 0.193],
-    down: [0.1, 0.075, 0.07],
-    accent: [0.94, 0.33, 0.1],
-    light: [0.5, 0.78, 0.1, 0.12],
+    base: [0.235, 0.232, 0.222],
+    down: [0.095, 0.07, 0.065],
+    accent: [0.96, 0.33, 0.09],
+    light: [0.26, 1.0, 0.13, 0.15],
     dot: [0.92, 0.9, 0.86, 0.2],
     fg: [0.92, 0.9, 0.86],
     zone: [0.022, 0.3],
     shadow: 0.68,
-    wire: [0.66, 0.64, 0.6],
+    wire: [0.72, 0.7, 0.66],
     packet: [0.96, 0.94, 0.9],
     add: 1,
   },
