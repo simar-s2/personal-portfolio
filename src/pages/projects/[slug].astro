@@ -40,7 +40,7 @@ const sections = ['Results', 'Problem', 'What I built', ...headings.filter((h) =
       <div class="case-links">
         {
           p.repo && (
-            <a href={p.repo} target="_blank" rel="noopener">
+            <a href={p.repo} target="_blank" rel="noopener" data-umami-event="Open GitHub" data-umami-event-project={entry.id}>
               <Icon name="GitHub" />
               Source
             </a>

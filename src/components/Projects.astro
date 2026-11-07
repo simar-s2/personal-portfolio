@@ -34,17 +34,17 @@ const pillIcons: Record<string, string> = {
           </p>
           <p class="muted desc">{data.blurb}</p>
           <p class="links">
-            <a class="more" href={`${base}projects/${id}/`}>
+            <a class="more" href={`${base}projects/${id}/`} data-umami-event="Open case study" data-umami-event-project={id}>
               Case study
             </a>
             {data.repo && (
-              <a class="more" href={data.repo} target="_blank" rel="noopener">
+              <a class="more" href={data.repo} target="_blank" rel="noopener" data-umami-event="Open GitHub" data-umami-event-project={id}>
                 <Icon name="GitHub" size={12} />
                 GitHub
               </a>
             )}
             {data.live && (
-              <a class="more" href={data.live} target="_blank" rel="noopener">
+              <a class="more" href={data.live} target="_blank" rel="noopener" data-umami-event="Open live site" data-umami-event-project={id}>
                 Live site
               </a>
             )}

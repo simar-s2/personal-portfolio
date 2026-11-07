@@ -33,12 +33,12 @@ const parts = scene.nodes.map((n) => n.label).join(', ');
     <div class="cap" aria-live="polite">
       <p class="cap-title" hidden></p>
       <p class="cap-text">{scene.caption}</p>
-      <a class="cap-link" target="_blank" rel="noopener" hidden></a>
+      <a class="cap-link" href={repo ?? "#render"} target="_blank" rel="noopener" hidden></a>
     </div>
     {
       scene.steps && (
         <div class="ctrl">
-          <button class="cta" type="button">
+          <button class="cta" type="button" data-umami-event="Start walkthrough" data-umami-event-project={id}>
             ▶ {scene.cta ?? 'Walk through it'}
           </button>
           <div class="nav" hidden>
