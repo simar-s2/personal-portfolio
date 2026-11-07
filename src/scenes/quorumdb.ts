@@ -8,7 +8,7 @@ export const quorumdb: RScene = {
   cta: 'Crash the leader',
   camera: { az: -0.56, el: 0.66 },
   zones: [
-    { x: -1.9, z: 0, w: 6.4, d: 6.8 },
+    { label: 'quorumdb-0 · us-west1-a', x: -1.9, z: 0, w: 6.4, d: 6.8 },
     { x: 6.6, z: -5.2, w: 3.9, d: 3.9 },
     { x: 6.6, z: 4.8, w: 3.9, d: 3.9 },
   ],
@@ -47,6 +47,7 @@ export const quorumdb: RScene = {
       w: 2.4,
       d: 2.4,
       h: 0.95,
+      glow: 0.75,
       info: 'Elections, log replication and commit. Includes pre-vote, so a node that was cut off can\'t disturb the group when it returns, and ReadIndex, so a cut-off leader can\'t answer with old data.',
       path: 'internal/raft/raft.go',
     },
