@@ -47,7 +47,7 @@ The whole home page:
 
 It's a static site built with Astro, so pages are plain HTML with very little JavaScript.
 
-The renders don't use three.js. I wrote a small WebGL2 renderer, because a 3D library would have been about 15x the size for a scene this simple.
+The renders don't use three.js. I wrote a small WebGL2 renderer, because a 3D library would have been about 12x the size for scenes this simple.
 
 - **One mesh.** Every block is the same rounded box, drawn with instancing. Change its corner radius and it becomes a slab, a cylinder or a sphere.
 - **Six draw calls a frame:** ground, zones, shadows, blocks, wires and packets. Wires and packets are curves evaluated in the vertex shader, so moving them costs no CPU.
@@ -60,12 +60,13 @@ A scene is plain data in [`src/scenes`](src/scenes): blocks, wires and walkthrou
 
 | | Result |
 |---|---|
-| Lighthouse, home page | **100** performance, accessibility, best practices and SEO |
-| Lighthouse, QuorumDB page | **100** performance, accessibility and best practices |
+| Lighthouse, home and QuorumDB pages | **100** performance, accessibility, best practices and SEO |
+| Lighthouse, FaceMesh page | **100** on all but accessibility, at 96: its labels are small tap targets on a phone |
 | Home page download | 105 KiB, with 1.1 s to the largest paint |
 | Renderer script | **11 KB** gzipped |
-| Slowest frame, FaceMesh walkthrough | **21 ms**, with 0 frames over 25 ms |
-| The same, with the CPU slowed 4x | 21 ms, with 0 frames over 25 ms |
+| three.js, bundled for the same features | 134 KB gzipped |
+| Slowest frame, any scene | **21 ms**, with 0 frames over 25 ms |
+| FaceMesh with the CPU slowed 4x | 18 ms, with 0 frames over 25 ms |
 
 Frames were measured on a MacBook Pro (M1 Pro, Metal) at a 1518 × 1012 canvas. Lighthouse ran against the live site with its default mobile settings.
 
