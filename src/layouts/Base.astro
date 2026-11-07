@@ -3,15 +3,17 @@ import '@fontsource-variable/geist/wght.css';
 import '@fontsource-variable/geist-mono/wght.css';
 import '../styles/global.css';
 import geistUrl from '@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url';
+import Dock from '../components/Dock.astro';
 import { site } from '../data/site';
 
 interface Props {
   title?: string;
   description?: string;
   image?: string;
+  sections?: string[];
 }
 
-const { title, description = site.description, image = 'og/home.jpg' } = Astro.props;
+const { title, description = site.description, image = 'og/home.jpg', sections } = Astro.props;
 const fullTitle = title ? `${title} · ${site.name}` : `${site.name} · ${site.role}`;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImage = new URL(`${import.meta.env.BASE_URL}${image}`, Astro.site);
@@ -45,7 +47,9 @@ const ogImage = new URL(`${import.meta.env.BASE_URL}${image}`, Astro.site);
         />
       )
     }
+    <noscript><style>[data-reveal]{opacity:1!important;transform:none!important}</style></noscript>
     <script is:inline>
+      document.documentElement.classList.add('js');
       try {
         if (localStorage.getItem('theme') === 'light') {
           document.documentElement.dataset.theme = 'light';
@@ -58,5 +62,20 @@ const ogImage = new URL(`${import.meta.env.BASE_URL}${image}`, Astro.site);
     <main id="main" class="page">
       <slot />
     </main>
+    <Dock sections={sections} />
+    <script>
+      // Reveal each block as it reaches the screen.
+      const seen = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (!entry.isIntersecting) continue;
+            entry.target.classList.add('in');
+            seen.unobserve(entry.target);
+          }
+        },
+        { rootMargin: '0px 0px -4% 0px' },
+      );
+      for (const el of document.querySelectorAll('[data-reveal]')) seen.observe(el);
+    </script>
   </body>
 </html>
