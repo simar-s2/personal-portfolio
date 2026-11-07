@@ -269,7 +269,7 @@ const isCase = Boolean(sections?.length);
 
   // On a case study, this page's sections come first.
   const headings = [...document.querySelectorAll<HTMLElement>('[data-section], .prose h2')];
-  for (const [i, h] of [...headings].reverse().entries()) {
+  for (const h of [...headings].reverse()) {
     const li = document.createElement('li');
     const a = document.createElement('a');
     a.href = `#${h.id}`;
@@ -279,7 +279,6 @@ const isCase = Boolean(sections?.length);
     a.append(tag);
     li.append(a);
     results.prepend(li);
-    void i;
   }
 
   const links = () =>
