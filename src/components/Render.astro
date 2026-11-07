@@ -42,11 +42,11 @@ const parts = scene.nodes.map((n) => n.label).join(', ');
             ▶ {scene.cta ?? 'Walk through it'}
           </button>
           <div class="nav" hidden>
-            <button class="ib prev" type="button" aria-label="Previous step">←</button>
+            <button class="ib step-prev" type="button" aria-label="Previous step">←</button>
             <span class="count" />
-            <button class="ib next" type="button" aria-label="Next step">→</button>
-            <button class="ib pause" type="button" aria-label="Pause">❚❚</button>
-            <button class="ib close" type="button" aria-label="Exit the walkthrough">✕</button>
+            <button class="ib step-next" type="button" aria-label="Next step">→</button>
+            <button class="ib step-toggle" type="button" aria-label="Pause">❚❚</button>
+            <button class="ib step-exit" type="button" aria-label="Exit the walkthrough">✕</button>
           </div>
         </div>
       )
@@ -146,10 +146,15 @@ const parts = scene.nodes.map((n) => n.label).join(', ');
     border-color: var(--line-2);
   }
   .rl-sub {
-    display: block;
+    display: none;
     color: var(--muted);
     font-size: 10.5px;
     font-weight: 400;
+  }
+  .rl.on .rl-sub,
+  .rl:hover .rl-sub,
+  .rl:focus-visible .rl-sub {
+    display: block;
   }
   .rl-tag:not(:empty) {
     margin-left: 5px;
@@ -275,7 +280,7 @@ const parts = scene.nodes.map((n) => n.label).join(', ');
       font-size: 10px;
       padding: 1px 5px 2px;
     }
-    .rl-sub {
+    .rl.on .rl-sub {
       display: none;
     }
     .panel {

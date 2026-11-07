@@ -32,13 +32,13 @@ export class Story {
     this.cta = q<HTMLButtonElement>('.cta');
     this.nav = q('.nav');
     this.count = q('.count');
-    this.toggle = q<HTMLButtonElement>('.pause');
+    this.toggle = q<HTMLButtonElement>('.step-toggle');
     this.defaultTags = Object.fromEntries(scene.nodes.filter((n) => n.tag).map((n) => [n.id, n.tag!]));
 
     this.cta?.addEventListener('click', () => this.play());
-    q('.prev')?.addEventListener('click', () => this.manual(this.index - 1));
-    q('.next')?.addEventListener('click', () => this.manual(this.index + 1));
-    q('.close')?.addEventListener('click', () => this.reset());
+    q('.step-prev')?.addEventListener('click', () => this.manual(this.index - 1));
+    q('.step-next')?.addEventListener('click', () => this.manual(this.index + 1));
+    q('.step-exit')?.addEventListener('click', () => this.reset());
     this.toggle?.addEventListener('click', () => {
       this.auto = !this.auto;
       this.schedule();
