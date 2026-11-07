@@ -42,11 +42,12 @@ function head(u: number, v: number): [number, number, number] {
   const t = u * 1.9;
   const p = v * 1.45;
   let r = 1;
-  r += 0.34 * bump(t / 0.17, (p + 0.1) / 0.28); // nose
-  r -= 0.1 * bump((Math.abs(t) - 0.42) / 0.16, (p - 0.2) / 0.13); // eyes
-  r += 0.07 * bump(t / 0.34, (p + 0.56) / 0.07); // lips
-  r += 0.05 * bump(t / 0.5, (p - 0.42) / 0.09); // brow
-  const taper = 1 - 0.3 * Math.max(0, -v - 0.1);
+  r += 0.42 * bump(t / 0.15, (p + 0.08) / 0.26); // nose
+  r -= 0.15 * bump((Math.abs(t) - 0.44) / 0.17, (p - 0.2) / 0.13); // eyes
+  r += 0.11 * bump(t / 0.3, (p + 0.56) / 0.075); // lips
+  r -= 0.06 * bump(t / 0.34, (p + 0.72) / 0.06); // under the lip
+  r += 0.09 * bump(t / 0.55, (p - 0.42) / 0.09); // brow
+  const taper = 1 - 0.26 * Math.max(0, -v - 0.1);
   return [
     Math.sin(t) * Math.cos(p) * r * 0.82 * taper,
     Math.sin(p) * 1.12,
@@ -139,7 +140,7 @@ export function build(scene: RScene): Built {
     } else {
       // Clouds and meshes are points, drawn with the packet shader.
       const random = rng(ni * 97 + 11);
-      const addPoint = (u: number, v: number, noise: number, s: number) => {
+      const addCloudPoint = (u: number, v: number, noise: number, s: number) => {
         const [a, b, c] = head(u, v);
         const px = n.x + (a + (random() - 0.5) * noise) * (w / 2);
         const py = y + h / 2 + (b + (random() - 0.5) * noise) * (h / 2.2);
@@ -148,18 +149,18 @@ export function build(scene: RScene): Built {
         packetOwner.push(-1 - ni);
       };
       if (kind === 'mesh') {
-        for (let i = 0; i < 26; i++) {
-          for (let j = 0; j < 28; j++) addPoint(i / 12.5 - 1, j / 13.5 - 1, 0, 0.042);
+        for (let i = 0; i < 40; i++) {
+          for (let j = 0; j < 44; j++) addCloudPoint(i / 19.5 - 1, j / 21.5 - 1, 0, 0.032);
         }
       } else {
-        for (let i = 0; i < 620; i++) {
+        for (let i = 0; i < 1100; i++) {
           const u = random() * 2 - 1;
           const v = random() * 2 - 1;
           // A hole in the scan, on one cheek.
           if (Math.hypot(u - 0.42, v + 0.22) < 0.22) continue;
-          addPoint(u, v, 0.13, 0.036);
+          addCloudPoint(u, v, 0.1, 0.03);
         }
-        for (let i = 0; i < 26; i++) addPoint(random() * 2.6 - 1.3, random() * 2.4 - 1.2, 1.1, 0.036);
+        for (let i = 0; i < 26; i++) addCloudPoint(random() * 2.6 - 1.3, random() * 2.4 - 1.2, 1.1, 0.03);
       }
     }
 
