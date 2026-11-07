@@ -81,9 +81,16 @@ export class Labels {
   // Reflect the glow, dim and crashed state of each node.
   setStates(nodes: Float32Array): void {
     this.items.forEach((item, i) => {
-      item.el.classList.toggle('on', nodes[i * 4 + 1]! > 0.5);
+      const wasOn = item.el.classList.contains('on');
+      const isOn = nodes[i * 4 + 1]! > 0.5;
+      item.el.classList.toggle('on', isOn);
       item.el.classList.toggle('down', nodes[i * 4 + 2]! > 0.5);
       item.el.classList.toggle('dim', nodes[i * 4 + 3]! > 0.5);
+      // A lit label also shows its second line, so it changes size.
+      if (wasOn !== isOn) {
+        item.w = item.el.offsetWidth;
+        item.h = item.el.offsetHeight;
+      }
     });
   }
 
