@@ -337,7 +337,7 @@ const isCase = Boolean(sections?.length);
     let queued = false;
     const update = () => {
       queued = false;
-      const line = innerHeight * 0.35;
+      const line = innerHeight * 0.2;
       let current = headings[0]!;
       for (const h of headings) {
         if (h.getBoundingClientRect().top <= line) current = h;
