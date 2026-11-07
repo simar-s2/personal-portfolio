@@ -20,8 +20,7 @@ const pillIcons: Record<string, string> = {
   <ul class="list">
     {
       projects.map(({ id, data }) => (
-        <li class="proj">
-          <div class="body">
+        <li>
           <p class="top">
             <a class="title" href={`${base}projects/${id}/`}>
               {data.title}
@@ -50,11 +49,6 @@ const pillIcons: Record<string, string> = {
               </a>
             )}
           </p>
-          </div>
-          <a class="thumb" href={`${base}projects/${id}/`} aria-label={`${data.title} case study`} tabindex="-1">
-            <img class="only-dark" src={`${base}posters/${id}-tile-dark.webp`} alt="" width="480" height="312" loading="lazy" />
-            <img class="only-light" src={`${base}posters/${id}-tile-light.webp`} alt="" width="480" height="312" loading="lazy" />
-          </a>
         </li>
       ))
     }
@@ -64,38 +58,7 @@ const pillIcons: Record<string, string> = {
 <style>
   .list {
     display: grid;
-    gap: 24px;
-  }
-  .proj {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 176px;
-    gap: 22px;
-    align-items: start;
-  }
-  .thumb {
-    display: block;
-    aspect-ratio: 480 / 312;
-    margin-top: 3px;
-    overflow: hidden;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    background: #000;
-    transition: border-color 0.18s;
-  }
-  [data-theme='light'] .thumb {
-    background: var(--card);
-  }
-  .thumb:hover {
-    border-color: var(--line-2);
-  }
-  .thumb img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.5s var(--ease);
-  }
-  .thumb:hover img {
-    transform: scale(1.04);
+    gap: 19px;
   }
   .top {
     display: flex;
@@ -119,13 +82,5 @@ const pillIcons: Record<string, string> = {
     flex-wrap: wrap;
     gap: 2px 13px;
     margin-top: 5px;
-  }
-  @media (max-width: 620px) {
-    .proj {
-      grid-template-columns: minmax(0, 1fr);
-    }
-    .thumb {
-      display: none;
-    }
   }
 </style>
