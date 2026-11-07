@@ -14,9 +14,9 @@
   --sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
   --mono: 'Geist Mono Variable', ui-monospace, Menlo, monospace;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --text: 14.94px;
-  --small: 13.07px;
-  --tiny: 11.2px;
+  --text: 16px;
+  --small: 14.5px;
+  --tiny: 12.5px;
 }
 
 :root[data-theme='light'] {
@@ -124,7 +124,7 @@ button {
 .page {
   max-width: 801px;
   margin: 0 auto;
-  padding: 97px 20px 150px;
+  padding: 44px 20px 150px;
 }
 
 .sec {
@@ -186,8 +186,8 @@ button {
   gap: 4px;
   font-size: var(--tiny);
   font-weight: 500;
-  line-height: 15px;
-  padding: 2px 7.5px;
+  line-height: 16px;
+  padding: 2px 8px;
   border-radius: 999px;
   background: var(--brand-soft);
   color: var(--fg);
@@ -216,14 +216,14 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 28px;
-  padding: 0 11.2px;
+  height: 30px;
+  padding: 0 12px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--card);
   color: var(--muted);
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 12.25px;
   letter-spacing: 0.02em;
   transition: color 0.18s;
 }
@@ -259,7 +259,7 @@ button {
 
 @media (max-width: 620px) {
   .page {
-    padding-top: 56px;
+    padding-top: 36px;
   }
 }
 
