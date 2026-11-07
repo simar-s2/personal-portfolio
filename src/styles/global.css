@@ -3,32 +3,34 @@
   --bg: #111110;
   --fg: #e9e8e4;
   --muted: #a19e99;
-  --faint: #716e69;
-  --card: #171716;
+  --faint: #76736e;
+  --card: #1c1c1a;
   --soft: #232322;
   --line: #ebe7e01f;
   --line-2: #ebe7e033;
   --brand: #f04e15;
   --brand-soft: #f04e1529;
-  --brand-fg: #ff8d60;
+  --select: #31312e;
   --sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
   --mono: 'Geist Mono Variable', ui-monospace, Menlo, monospace;
-  --ease: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --text: 14.94px;
+  --small: 13.07px;
+  --tiny: 11.2px;
 }
 
 :root[data-theme='light'] {
   color-scheme: light;
   --bg: #f4f2ef;
-  --fg: #211d1a;
-  --muted: #6e6a64;
-  --faint: #9a958e;
+  --fg: #1e1b18;
+  --muted: #625d56;
+  --faint: #8f8a83;
   --card: #fbfaf8;
   --soft: #eae8e3;
   --line: #dfdcd6;
-  --line-2: #cdc9c2;
-  --brand: #d9420c;
-  --brand-soft: #f04e151c;
-  --brand-fg: #b9380a;
+  --line-2: #c9c5be;
+  --brand-soft: #f04e151f;
+  --select: #e2e1de;
 }
 
 *,
@@ -48,11 +50,19 @@ body {
   background: var(--bg);
   color: var(--fg);
   font-family: var(--sans);
-  font-size: 14.5px;
-  line-height: 1.65;
+  font-size: var(--text);
+  line-height: 1.64;
+  font-feature-settings: 'kern', 'liga', 'calt';
+  font-optical-sizing: auto;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   overflow-x: clip;
+}
+
+::selection {
+  color: var(--muted);
+  background: var(--select);
 }
 
 h1,
@@ -91,7 +101,7 @@ button {
 }
 
 :focus-visible {
-  outline: 2px solid var(--brand);
+  outline: 2px solid var(--muted);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -112,38 +122,47 @@ button {
 }
 
 .page {
-  max-width: 762px;
+  max-width: 801px;
   margin: 0 auto;
-  padding: clamp(40px, 7vw, 76px) 20px 150px;
+  padding: 97px 20px 150px;
 }
 
 .sec {
-  margin-top: 68px;
+  margin-top: 60px;
 }
 
 .sec > h2 {
-  font-size: 14.5px;
+  font-size: var(--text);
   font-weight: 500;
-  margin-bottom: 18px;
+  line-height: 1.5;
+  letter-spacing: -0.028em;
+  margin-bottom: 20px;
 }
 
 .muted {
   color: var(--muted);
 }
 
-.mono {
-  font-family: var(--mono);
+.small {
+  font-size: var(--small);
+  line-height: 1.43;
 }
 
-.link {
+.more {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--small);
+  line-height: 1.43;
+  color: var(--muted);
   text-decoration: underline;
-  text-decoration-color: var(--line-2);
-  text-underline-offset: 3px;
-  transition: text-decoration-color 0.18s, color 0.18s;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  transition: color 0.18s;
 }
 
-.link:hover {
-  text-decoration-color: currentColor;
+.more:hover {
+  color: var(--fg);
 }
 
 [data-theme='light'] .only-dark,
@@ -153,10 +172,9 @@ button {
 
 /* A value still to be filled in. Easy to spot on the page and in the source. */
 .ph {
-  font-family: var(--mono);
-  font-size: 0.86em;
-  color: var(--brand-fg);
-  border: 1px dashed color-mix(in srgb, var(--brand) 55%, transparent);
+  font-size: 0.9em;
+  color: var(--fg);
+  border: 1px dashed var(--brand);
   border-radius: 5px;
   padding: 0 5px;
   white-space: nowrap;
@@ -165,54 +183,94 @@ button {
 .pill {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font-size: 11.5px;
-  line-height: 18px;
-  padding: 0 8px;
+  gap: 4px;
+  font-size: var(--tiny);
+  font-weight: 500;
+  line-height: 15px;
+  padding: 2px 7.5px;
   border-radius: 999px;
   background: var(--brand-soft);
-  color: var(--brand-fg);
+  color: var(--fg);
   white-space: nowrap;
 }
 
-.pill::before {
-  content: '';
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--brand);
+.pill svg {
+  color: var(--brand);
+  flex: none;
 }
 
 .card {
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 13px;
 }
 
-/* Page-load reveal, staggered with --i. Pure CSS, so it costs no script. */
-[data-reveal] {
-  animation: reveal 0.7s var(--ease) both;
-  animation-delay: calc(var(--i, 0) * 70ms);
+/* Mono is only for chips, the quote and footer links. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7.5px;
 }
 
-@keyframes reveal {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-    filter: blur(4px);
-  }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 11.2px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  transition: color 0.18s;
+}
+
+.chip:hover {
+  color: var(--fg);
+}
+
+/* Sections rise in as they reach the screen. The first block moves a little further. */
+.js [data-reveal] {
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.6s var(--ease),
+    transform 0.6s var(--ease);
+  transition-delay: calc(var(--i, 0) * 60ms);
+  will-change: opacity, transform;
+}
+
+.js [data-reveal='hero'] {
+  transform: translateY(14px);
+}
+
+.js [data-reveal].in {
+  opacity: 1;
+  transform: none;
+  will-change: auto;
 }
 
 @view-transition {
   navigation: auto;
 }
 
+@media (max-width: 620px) {
+  .page {
+    padding-top: 56px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
-  [data-reveal] {
-    animation: none;
+  .js [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
   @view-transition {
     navigation: none;
