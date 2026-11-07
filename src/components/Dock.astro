@@ -1,0 +1,363 @@
+---
+import { getCollection } from 'astro:content';
+import Icon from './Icon.astro';
+import { site } from '../data/site';
+
+interface Props {
+  sections?: string[];
+}
+
+const { sections } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+const isCase = Boolean(sections?.length);
+---
+
+<div class="dock-fade" aria-hidden="true"></div>
+
+<nav class="dock" aria-label="Quick actions">
+  {
+    isCase ? (
+      <button class="track" type="button" data-open aria-label="Jump to a section">
+        <span class="dot" />
+        <span class="track-name" data-track>
+          {sections![0]}
+        </span>
+        <svg class="ring" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+          <circle cx="8" cy="8" r="6.2" />
+          <circle data-ring cx="8" cy="8" r="6.2" pathLength="1" />
+        </svg>
+      </button>
+    ) : (
+      <button class="search" type="button" data-open>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-3.500-3.500" />
+        </svg>
+        <span>Jump to anything</span>
+        <kbd data-mod>⌘</kbd>
+        <kbd>K</kbd>
+      </button>
+    )
+  }
+  <span class="sep"></span>
+  <button class="ico" type="button" data-theme-toggle aria-label="Switch between dark and light">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="4"></circle>
+      <path d="M12 2v2M12 20v2M4.900 4.900l1.400 1.400M17.700 17.700l1.400 1.400M2 12h2M20 12h2M4.900 19.100l1.400-1.400M17.700 6.300l1.400-1.400"></path>
+    </svg>
+  </button>
+  <a class="ico" href={site.github.url} target="_blank" rel="noopener" aria-label="GitHub">
+    <Icon name="GitHub" size={15} />
+  </a>
+  {
+    isCase && (
+      <a class="ico" href={base} aria-label="Back to the home page">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9.500" />
+          <path d="m13.500 8-4 4 4 4" />
+        </svg>
+      </a>
+    )
+  }
+</nav>
+
+<dialog class="palette" data-palette aria-label="Jump to">
+  <input type="text" placeholder="Jump to a project, section or link" aria-label="Search" autocomplete="off" spellcheck="false" />
+  <ul data-results>
+    {
+      projects.map((p) => (
+        <li>
+          <a href={`${base}projects/${p.id}/`}>
+            {p.data.title}
+            <span>{p.data.category}</span>
+          </a>
+        </li>
+      ))
+    }
+    <li><a href={`${base}#experience`}>Experience<span>Home</span></a></li>
+    <li><a href={`${base}#stack`}>Tech stack<span>Home</span></a></li>
+    <li><a href={site.github.url} target="_blank" rel="noopener">GitHub<span>@{site.github.handle}</span></a></li>
+    <li><a href={site.linkedin.url} target="_blank" rel="noopener">LinkedIn<span>{site.linkedin.handle}</span></a></li>
+    <li><a href={`mailto:${site.email}`}>Email<span>{site.email}</span></a></li>
+  </ul>
+</dialog>
+
+<style>
+  .dock-fade {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 84px;
+    z-index: 30;
+    pointer-events: none;
+    background: linear-gradient(to top, var(--bg), transparent);
+    backdrop-filter: blur(3px);
+    mask-image: linear-gradient(to top, #000 35%, transparent);
+  }
+  .dock {
+    position: fixed;
+    left: 50%;
+    bottom: 16px;
+    z-index: 40;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 6px 8px 6px 6px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(12px);
+    white-space: nowrap;
+  }
+  .search {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    height: 32px;
+    padding: 0 8px 0 11px;
+    border-radius: 999px;
+    background: var(--soft);
+    color: var(--muted);
+    font-size: 12.5px;
+  }
+  .search span {
+    margin-right: 18px;
+  }
+  kbd {
+    display: inline-grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    background: color-mix(in srgb, var(--fg) 14%, transparent);
+    font-family: var(--sans);
+    font-size: 10px;
+    margin-left: -4px;
+  }
+  .track {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 32px;
+    padding: 0 8px 0 13px;
+    font-size: 12.5px;
+    max-width: 260px;
+  }
+  .track-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .dot {
+    flex: none;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--fg);
+  }
+  .ring {
+    flex: none;
+    transform: rotate(-90deg);
+    fill: none;
+    stroke: var(--line-2);
+    stroke-width: 2;
+  }
+  .ring [data-ring] {
+    stroke: var(--fg);
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+  }
+  .sep {
+    width: 1px;
+    height: 16px;
+    margin: 0 5px;
+    background: var(--line-2);
+  }
+  .ico {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    color: var(--muted);
+    transition: color 0.18s, background 0.18s;
+  }
+  .ico:hover {
+    color: var(--fg);
+    background: var(--soft);
+  }
+  .palette {
+    width: min(460px, calc(100vw - 32px));
+    margin: 14vh auto auto;
+    padding: 0;
+    color: var(--fg);
+    background: var(--card);
+    border: 1px solid var(--line-2);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .palette::backdrop {
+    background: rgb(0 0 0 / 0.42);
+    backdrop-filter: blur(2px);
+  }
+  .palette input {
+    width: 100%;
+    height: 44px;
+    padding: 0 15px;
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    outline: none;
+  }
+  .palette ul {
+    max-height: 340px;
+    overflow-y: auto;
+    padding: 5px;
+  }
+  .palette a {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: var(--small);
+  }
+  .palette a span {
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .palette a:hover,
+  .palette a.is-active {
+    background: var(--soft);
+  }
+  @media (hover: none) {
+    .dock-fade {
+      backdrop-filter: none;
+    }
+    kbd {
+      display: none;
+    }
+    .search span {
+      margin-right: 4px;
+    }
+  }
+</style>
+
+<script>
+  const root = document.documentElement;
+
+  document.querySelector('[data-theme-toggle]')?.addEventListener('click', () => {
+    const next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    root.dataset.theme = next;
+    try {
+      localStorage.setItem('theme', next);
+    } catch {}
+  });
+
+  // Jump to anything, opened with the dock button or Cmd/Ctrl+K.
+  const palette = document.querySelector<HTMLDialogElement>('[data-palette]')!;
+  const input = palette.querySelector('input')!;
+  const results = palette.querySelector<HTMLElement>('[data-results]')!;
+  const mod = document.querySelector('[data-mod]');
+  if (mod && !/Mac|iPhone|iPad/.test(navigator.platform)) mod.textContent = 'Ctrl';
+
+  // On a case study, this page's sections come first.
+  const headings = [...document.querySelectorAll<HTMLElement>('[data-section], .prose h2')];
+  for (const [i, h] of [...headings].reverse().entries()) {
+    const li = document.createElement('li');
+    const a = document.createElement('a');
+    a.href = `#${h.id}`;
+    a.textContent = h.dataset.section ?? h.textContent ?? '';
+    const tag = document.createElement('span');
+    tag.textContent = 'This page';
+    a.append(tag);
+    li.append(a);
+    results.prepend(li);
+    void i;
+  }
+
+  const links = () =>
+    [...results.querySelectorAll<HTMLAnchorElement>('a')].filter((a) => a.parentElement!.style.display !== 'none');
+  const setActive = (el?: HTMLAnchorElement) => {
+    results.querySelectorAll('.is-active').forEach((a) => a.classList.remove('is-active'));
+    el?.classList.add('is-active');
+    el?.scrollIntoView({ block: 'nearest' });
+  };
+  const open = () => {
+    input.value = '';
+    filter();
+    palette.showModal();
+    input.focus();
+  };
+  const filter = () => {
+    const q = input.value.trim().toLowerCase();
+    for (const li of results.children as HTMLCollectionOf<HTMLElement>) {
+      li.style.display = li.textContent!.toLowerCase().includes(q) ? '' : 'none';
+    }
+    setActive(links()[0]);
+  };
+
+  document.querySelector('[data-open]')?.addEventListener('click', open);
+  input.addEventListener('input', filter);
+  results.addEventListener('click', (e) => {
+    if ((e.target as Element).closest('a')) palette.close();
+  });
+  palette.addEventListener('click', (e) => {
+    if (e.target === palette) palette.close();
+  });
+  addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      if (palette.open) palette.close();
+      else open();
+    }
+  });
+  palette.addEventListener('keydown', (e) => {
+    const all = links();
+    const at = all.findIndex((a) => a.classList.contains('is-active'));
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const step = e.key === 'ArrowDown' ? 1 : -1;
+      setActive(all[(at + step + all.length) % all.length]);
+    } else if (e.key === 'Enter' && all[at]) {
+      e.preventDefault();
+      all[at]!.click();
+    }
+  });
+
+  // On a case study, the dock shows the current section and how far along you are.
+  const label = document.querySelector('[data-track]');
+  const ring = document.querySelector<SVGCircleElement>('[data-ring]');
+  if (label && ring && headings.length) {
+    let queued = false;
+    const update = () => {
+      queued = false;
+      const line = innerHeight * 0.35;
+      let current = headings[0]!;
+      for (const h of headings) {
+        if (h.getBoundingClientRect().top <= line) current = h;
+      }
+      const name = current.dataset.section ?? current.textContent ?? '';
+      if (label.textContent !== name) label.textContent = name;
+      const max = document.documentElement.scrollHeight - innerHeight;
+      ring.style.strokeDashoffset = String(1 - Math.min(1, scrollY / Math.max(max, 1)));
+    };
+    addEventListener(
+      'scroll',
+      () => {
+        if (!queued) {
+          queued = true;
+          requestAnimationFrame(update);
+        }
+      },
+      { passive: true },
+    );
+    update();
+  }
+</script>
