@@ -4,6 +4,7 @@
 export const site = {
   name: 'Simarjot Singh',
   role: 'Software Engineer',
+  tagline: 'Software Engineer · Math and Computer Science at SFU',
   description:
     'Math and Computer Science at Simon Fraser University. I build backend systems and the cloud infrastructure they run on.',
   location: 'Vancouver, BC',

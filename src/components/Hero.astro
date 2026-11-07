@@ -1,0 +1,25 @@
+---
+// The architecture in front: one live render that moves through all five projects.
+import { getCollection } from 'astro:content';
+import Render from './Render.astro';
+import { scenes } from '../scenes';
+
+const base = import.meta.env.BASE_URL;
+const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+const entries = projects.flatMap((p) => {
+  const scene = scenes[p.id];
+  return scene
+    ? [{ id: p.id, title: p.data.title, repo: p.data.repo, href: `${base}projects/${p.id}/`, scene }]
+    : [];
+});
+---
+
+<div class="hero" data-reveal style="--i:1">
+  <Render entries={entries} />
+</div>
+
+<style>
+  .hero {
+    margin-top: 26px;
+  }
+</style>

@@ -1,7 +1,5 @@
 ---
-// The row under the intro: a featured render, a Vancouver clock and a dot-matrix mark.
-const base = import.meta.env.BASE_URL;
-
+// What I'm doing now, beside a Vancouver clock and a dot-matrix mark.
 // The letter S, one string per row.
 const glyph = ['.#####.', '##...##', '##.....', '.#####.', '.....##', '##...##', '.#####.'];
 const cell = 15;
@@ -24,21 +22,15 @@ const ticks = Array.from({ length: 60 }, (_, i) => {
 ---
 
 <div class="widgets" data-reveal style="--i:2">
-  <a class="card feat" href={`${base}projects/quorumdb/`}>
-    <div class="art">
-      <img src={`${base}posters/quorumdb-thumb-dark.webp`} class="only-dark" alt="3D render of QuorumDB" width="320" height="320" />
-      <img src={`${base}posters/quorumdb-thumb-light.webp`} class="only-light" alt="3D render of QuorumDB" width="320" height="320" loading="lazy" />
-    </div>
-    <div class="meta">
-      <p class="k">Live 3D render</p>
-      <p class="t">QuorumDB</p>
-      <p class="s">Raft, from scratch in Go</p>
-      <span class="go">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.500v17l14-8.500z"></path></svg>
-        Explore
-      </span>
-    </div>
-  </a>
+  <section class="now">
+    <h2>Currently</h2>
+    <p class="muted">
+      Studying Math and Computer Science at Simon Fraser University. I build backend systems and the
+      cloud infrastructure they run on. Right now I'm finishing an internship at DarkVision and moving a
+      5,000+ user website to AWS with Develop for Good. In January I join SFU's Parallel and Distributed
+      Computing Lab to work on distributed graph mining systems.
+    </p>
+  </section>
 
   <div class="card clock" role="img" aria-label="Current time in Vancouver">
     <svg viewBox="0 0 180 180" data-clock>
@@ -76,74 +68,27 @@ const ticks = Array.from({ length: 60 }, (_, i) => {
 <style>
   .widgets {
     display: grid;
-    grid-template-columns: minmax(0, 2.05fr) minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) 158px 158px;
     gap: 15px;
-    margin-top: 33px;
+    align-items: start;
+    margin-top: 44px;
   }
-  .feat {
-    display: flex;
-    gap: 17px;
-    padding: 14px;
-    transition: border-color 0.18s;
+  .now {
+    padding-right: 12px;
   }
-  .feat:hover {
-    border-color: var(--line-2);
-  }
-  .art {
-    flex: none;
-    width: 148px;
-    aspect-ratio: 1;
-    border-radius: 9px;
-    overflow: hidden;
-    background: #000;
-  }
-  [data-theme='light'] .art {
-    background: var(--soft);
-  }
-  .art img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  .meta {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    min-width: 0;
-  }
-  .k {
-    font-size: var(--tiny);
-    color: var(--muted);
-    line-height: 1.34;
-  }
-  .t {
+  .now h2 {
     font-size: var(--text);
     font-weight: 500;
+    letter-spacing: -0.028em;
     line-height: 1.5;
-    margin-top: 3px;
-  }
-  .s {
-    color: var(--muted);
-    font-size: var(--small);
-    line-height: 1.43;
-  }
-  .go {
-    display: inline-flex;
-    align-items: center;
-    align-self: flex-start;
-    gap: 6px;
-    margin-top: 9px;
-    padding: 3px 11px 3px 9px;
-    font-size: 12px;
-    border-radius: 999px;
-    background: var(--soft);
-    white-space: nowrap;
+    margin-bottom: 6px;
   }
   .clock,
   .markbox {
     display: grid;
     place-items: center;
-    padding: 7px;
+    padding: 6px;
+    aspect-ratio: 1;
   }
   .clock svg,
   .markbox svg {
@@ -188,12 +133,9 @@ const ticks = Array.from({ length: 60 }, (_, i) => {
     .widgets {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-    .feat {
+    .now {
       grid-column: 1 / -1;
-    }
-    .clock,
-    .markbox {
-      aspect-ratio: 1;
+      padding-right: 0;
     }
   }
 </style>

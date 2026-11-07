@@ -6,17 +6,7 @@ import { site } from '../data/site';
 
 <header data-reveal="hero">
   <h1 class="name">{site.name}</h1>
-  <p class="role">{site.role}</p>
-</header>
-
-<section class="now" data-reveal style="--i:1">
-  <h2>Currently</h2>
-  <p class="muted">
-    Studying Math and Computer Science at Simon Fraser University. I build backend systems and the
-    cloud infrastructure they run on. Right now I'm finishing an internship at DarkVision and moving a
-    5,000+ user website to AWS with Develop for Good. In January I join SFU's Parallel and Distributed
-    Computing Lab to work on distributed graph mining systems.
-  </p>
+  <p class="role">{site.tagline}</p>
   <div class="contact">
     <a href={`mailto:${site.email}`} data-copy={site.email} data-umami-event="Copy email">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
@@ -35,11 +25,11 @@ import { site } from '../data/site';
     </a>
     <span><Ph text={site.resume} /></span>
   </div>
-</section>
+</header>
 
 <style>
   .name {
-    font-size: 18.68px;
+    font-size: 21px;
     font-weight: 500;
     letter-spacing: -0.025em;
     line-height: 1.4;
@@ -50,22 +40,12 @@ import { site } from '../data/site';
     font-weight: 500;
     line-height: 1.5;
   }
-  .now {
-    margin-top: 30px;
-  }
-  .now h2 {
-    font-size: var(--text);
-    font-weight: 500;
-    letter-spacing: -0.028em;
-    line-height: 1.5;
-    margin-bottom: 8px;
-  }
   .contact {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 4px 19px;
-    margin-top: 18px;
+    margin-top: 12px;
     color: var(--muted);
   }
   .contact a {
