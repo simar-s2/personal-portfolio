@@ -32,8 +32,8 @@ const hasTabs = entries.length > 1;
     {
       hasPoster && (
         <>
-          <img class="poster only-dark" src={`${base}posters/${first.id}-dark.webp`} alt="" width="1600" height="920" fetchpriority="high" />
-          <img class="poster only-light" src={`${base}posters/${first.id}-light.webp`} alt="" width="1600" height="920" />
+          <img class="poster only-dark" src={`${base}posters/${first.id}-dark.webp`} alt="" width="1522" height="1014" fetchpriority="high" />
+          <img class="poster only-light" src={`${base}posters/${first.id}-light.webp`} alt="" width="1522" height="1014" />
         </>
       )
     }
@@ -95,11 +95,9 @@ const hasTabs = entries.length > 1;
 </script>
 
 <style is:global>
-  /* Wider than the text column, so the render is the first thing you see. */
+  /* Lines up with the text and every other section. */
   .render {
     overflow: hidden;
-    width: min(1040px, calc(100vw - 32px));
-    margin-left: calc(50% - min(520px, 50vw - 16px));
   }
   .tabs {
     display: flex;
@@ -144,8 +142,7 @@ const hasTabs = entries.length > 1;
   }
   .stage {
     position: relative;
-    aspect-ratio: 1600 / 920;
-    max-height: max(400px, calc(100svh - 350px));
+    aspect-ratio: 3 / 2;
     width: 100%;
     overflow: hidden;
     background: #000;
@@ -379,7 +376,6 @@ const hasTabs = entries.length > 1;
   @media (max-width: 620px) {
     .stage {
       aspect-ratio: 1 / 1.02;
-      max-height: none;
     }
     .rl {
       pointer-events: none;
