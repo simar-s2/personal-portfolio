@@ -1,0 +1,84 @@
+---
+import Icon from './Icon.astro';
+import Ph from './Ph.astro';
+import { site } from '../data/site';
+---
+
+<header data-reveal>
+  <h1 class="name">{site.name}</h1>
+  <p class="muted">{site.role}</p>
+</header>
+
+<section class="now" data-reveal style="--i:1">
+  <h2>Currently</h2>
+  <p class="muted">
+    Studying Math and Computer Science at Simon Fraser University. I build backend systems and the
+    cloud infrastructure they run on. Right now I'm finishing an internship at DarkVision and moving a
+    5,000+ user website to AWS with Develop for Good. In January I join SFU's Parallel and Distributed
+    Computing Lab to work on distributed graph mining systems.
+  </p>
+  <div class="contact">
+    <a href={`mailto:${site.email}`} data-copy={site.email}>
+      <Icon name="Gmail" />
+      <span data-copy-label>{site.email}</span>
+    </a>
+    <a href={site.github.url} target="_blank" rel="noopener" aria-label="GitHub profile">
+      <Icon name="GitHub" />
+      @{site.github.handle}
+    </a>
+    <a href={site.linkedin.url} target="_blank" rel="noopener" aria-label="LinkedIn profile">
+      <Icon name="LinkedIn" />
+      {site.linkedin.handle}
+    </a>
+    <span class="resume"><Ph text={site.resume} /></span>
+  </div>
+</section>
+
+<style>
+  .name {
+    font-size: 17px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.5;
+  }
+  .now {
+    margin-top: 26px;
+  }
+  .now h2 {
+    font-size: 14.5px;
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+  .contact {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 18px;
+    margin-top: 14px;
+    font-size: 13.5px;
+    color: var(--muted);
+  }
+  .contact a {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: color 0.18s;
+  }
+  .contact a:hover {
+    color: var(--fg);
+  }
+</style>
+
+<script>
+  // Clicking the email copies it, since many people don't have a mail app set up.
+  for (const link of document.querySelectorAll<HTMLAnchorElement>('[data-copy]')) {
+    const label = link.querySelector('[data-copy-label]')!;
+    link.addEventListener('click', async (event) => {
+      if (!navigator.clipboard) return;
+      event.preventDefault();
+      await navigator.clipboard.writeText(link.dataset.copy!);
+      label.textContent = 'Copied';
+      setTimeout(() => (label.textContent = link.dataset.copy!), 1400);
+    });
+  }
+</script>
