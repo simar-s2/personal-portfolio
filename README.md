@@ -14,16 +14,17 @@
 
 <br>
 
-<img src="docs/images/home.png" width="820" alt="The home page: my name, what I'm working on, a featured 3D render, a clock showing Vancouver time, and the start of the projects list.">
+<img src="docs/images/home.png" width="820" alt="The home page: my name and contact details above a large live 3D render of QuorumDB, with tabs for all five projects.">
 
 </div>
 
 ## ✨ What it does
 
-- **Puts the projects first,** with links to the code and a case study for each one.
-- **Shows each architecture in 3D.** Drag to rotate. Click a block to see what it does and jump to the file on GitHub.
+- **Opens on the architecture.** The home page starts with a large live 3D render that moves through all five projects by itself, until you touch it.
+- **Lets you explore it.** Drag to rotate. Click a block to see what it does and jump to the file on GitHub.
 - **Lets you break things.** Crash QuorumDB's leader, freeze the scheduler's leader, or follow a noisy scan through FaceMesh, one step at a time.
-- **Loads fast.** The home page has no 3D code on it at all, and the renderer only loads when a render is about to reach the screen.
+- **Gives each project a case study,** with results, the decisions I made and what I learned, plus links to the code.
+- **Loads fast.** A still image shows right away, then the small renderer takes over.
 
 ## 📸 Pictures
 
@@ -41,7 +42,7 @@ A walkthrough in progress: the leader has crashed and the other two have elected
 
 The whole home page:
 
-<img src="docs/images/full.png" width="620" alt="The full home page: projects, experience, things I learned, tech stack, renders, GitHub activity, walkthrough links, a large wordmark and a quote.">
+<img src="docs/images/full.png" width="620" alt="The full home page: the live render, projects with small renders beside them, what I'm doing now, experience, things I learned, tech stack, GitHub activity, walkthrough links, a large wordmark and a quote.">
 
 ## 🔬 How it works
 
@@ -52,6 +53,7 @@ The renders don't use three.js. I wrote a small WebGL2 renderer, because a 3D li
 - **One mesh.** Every block is the same rounded box, drawn with instancing. Change its corner radius and it becomes a slab, a cylinder or a sphere.
 - **Six draw calls a frame:** ground, zones, shadows, blocks, wires and packets. Wires and packets are curves evaluated in the vertex shader, so moving them costs no CPU.
 - **Real text.** Labels are DOM elements placed over the canvas, so they stay sharp and can be focused with a keyboard.
+- **Switching projects is cheap.** Shaders stay compiled and only the scene data changes, so moving between tabs doesn't stall.
 - **It backs off.** It stops when it's off screen or the tab is hidden, never goes above about 60 fps, and lowers its resolution if a GPU can't keep up. A still image shows first, and stays if WebGL isn't available.
 
 A scene is plain data in [`src/scenes`](src/scenes): blocks, wires and walkthrough steps.
@@ -60,15 +62,16 @@ A scene is plain data in [`src/scenes`](src/scenes): blocks, wires and walkthrou
 
 | | Result |
 |---|---|
-| Lighthouse, home and QuorumDB pages | **100** performance, accessibility, best practices and SEO |
-| Lighthouse, FaceMesh page | **100** on all but accessibility, at 96: its labels are small tap targets on a phone |
-| Home page download | 105 KiB, with 1.1 s to the largest paint |
+| Lighthouse: performance | **99** on the home and FaceMesh pages, **100** on QuorumDB |
+| Lighthouse: accessibility, best practices, SEO | **100** on all three pages |
+| Home page download | 168 KiB, with 1.6 s to the largest paint |
 | Renderer script | **11 KB** gzipped |
 | three.js, bundled for the same features | 134 KB gzipped |
-| Slowest frame, any scene | **21 ms**, with 0 frames over 25 ms |
+| Slowest frame, across the scenes I measured | about **20 ms**, with 0 frames over 25 ms |
+| Slowest frame while switching tabs | **18 ms** |
 | FaceMesh with the CPU slowed 4x | 18 ms, with 0 frames over 25 ms |
 
-Frames were measured on a MacBook Pro (M1 Pro, Metal) at a 1518 × 1012 canvas. Lighthouse ran against the live site with its default mobile settings.
+Frames were measured on a MacBook Pro (M1 Pro, Metal) at retina resolution. Lighthouse ran against the live site with its default mobile settings.
 
 ## ⚡️ Run it
 
