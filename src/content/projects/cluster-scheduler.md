@@ -16,7 +16,7 @@ results:
     note: Average while jobs were waiting, with 10,000 jobs on 100 workers. The lowest sample was 90.4%.
   - label: Time to a new leader
     value: 1.8 s
-    note: 1,769 ms typical and 2,449 ms slowest, bounded by the 2-second lease.
+    note: 1,769 ms typical and 2,449 ms slowest. Most of that is waiting for the 2-second lease to run out.
   - label: Recovery from a dead worker
     value: 5.4 s
     note: Typical time until all of its jobs were running on other workers.
