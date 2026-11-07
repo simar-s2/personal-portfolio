@@ -3,78 +3,69 @@
 const base = import.meta.env.BASE_URL;
 
 // The letter S, one string per row.
-const glyph = ['.#####.', '##...##', '##.....', '.###...', '...###.', '.....##', '##...##', '.#####.'];
+const glyph = ['.#####.', '##...##', '##.....', '.#####.', '.....##', '##...##', '.#####.'];
 const cell = 15;
 const mark = glyph.flatMap((row, y) =>
   [...row].flatMap((c, x) => (c === '#' ? [{ x: x * cell, y: y * cell }] : [])),
 );
-const ticks = Array.from({ length: 60 }, (_, i) => i);
+
+// Ticks follow a rounded square, so the face fills the card like a watch.
+const ticks = Array.from({ length: 60 }, (_, i) => {
+  const a = (i * Math.PI) / 30;
+  const s = Math.sin(a);
+  const c = Math.cos(a);
+  const reach = 81 / (Math.abs(s) ** 7 + Math.abs(c) ** 7) ** (1 / 7);
+  const inner = reach - (i % 5 ? 6 : 15);
+  const at = (r: number) => [(90 + r * s).toFixed(1), (90 - r * c).toFixed(1)];
+  const [x1, y1] = at(inner);
+  const [x2, y2] = at(reach);
+  return { x1, y1, x2, y2, big: i % 5 === 0 };
+});
 ---
 
 <div class="widgets" data-reveal style="--i:2">
   <a class="card feat" href={`${base}projects/quorumdb/`}>
     <div class="art">
-      <img
-        src={`${base}posters/quorumdb-thumb-dark.webp`}
-        class="only-dark"
-        alt="3D render of QuorumDB's three replicas"
-        width="320"
-        height="320"
-      />
-      <img
-        src={`${base}posters/quorumdb-thumb-light.webp`}
-        class="only-light"
-        alt=""
-        width="320"
-        height="320"
-        loading="lazy"
-      />
+      <img src={`${base}posters/quorumdb-thumb-dark.webp`} class="only-dark" alt="3D render of QuorumDB" width="320" height="320" />
+      <img src={`${base}posters/quorumdb-thumb-light.webp`} class="only-light" alt="3D render of QuorumDB" width="320" height="320" loading="lazy" />
     </div>
     <div class="meta">
-      <p class="eyebrow">Live 3D render</p>
+      <p class="k">Live 3D render</p>
       <p class="t">QuorumDB</p>
-      <p class="s">Three replicas, one leader</p>
-      <span class="go">▶ Crash the leader</span>
+      <p class="s">Raft, from scratch in Go</p>
+      <span class="go">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.500v17l14-8.500z"></path></svg>
+        Explore
+      </span>
     </div>
   </a>
 
   <div class="card clock" role="img" aria-label="Current time in Vancouver">
     <svg viewBox="0 0 180 180" data-clock>
-      {
-        ticks.map((i) => (
-          <line
-            x1="90"
-            y1={i % 5 ? 11 : 9}
-            x2="90"
-            y2={i % 5 ? 17 : 24}
-            stroke-width={i % 5 ? 1 : 2.4}
-            class={i % 5 ? 'tick' : 'hour-tick'}
-            transform={`rotate(${i * 6} 90 90)`}
-          />
-        ))
-      }
-      <text x="90" y="49">12</text>
-      <text x="139" y="97">3</text>
-      <text x="90" y="145">6</text>
-      <text x="41" y="97">9</text>
+      <rect width="180" height="180" rx="24" class="face"></rect>
+      {ticks.map((t) => <line x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} class={t.big ? 'big' : 'tick'} />)}
+      <text x="90" y="52">12</text>
+      <text x="136" y="97.500">3</text>
+      <text x="90" y="143">6</text>
+      <text x="44" y="97.500">9</text>
       <g data-hand="h" style="transform:rotate(305deg)">
-        <line class="hand" x1="90" y1="90" x2="90" y2="56" stroke-width="5.5"></line>
+        <line class="hand" x1="90" y1="90" x2="90" y2="56" stroke-width="5.500"></line>
       </g>
       <g data-hand="m" style="transform:rotate(60deg)">
-        <line class="hand" x1="90" y1="90" x2="90" y2="35" stroke-width="4"></line>
+        <line class="hand" x1="90" y1="90" x2="90" y2="33" stroke-width="4"></line>
       </g>
       <g data-hand="s" style="transform:rotate(180deg)">
-        <line class="sec" x1="90" y1="104" x2="90" y2="26" stroke-width="1.2"></line>
+        <line class="sec-hand" x1="90" y1="104" x2="90" y2="24" stroke-width="1.200"></line>
       </g>
-      <circle class="pin" cx="90" cy="90" r="3.2"></circle>
+      <circle class="pin" cx="90" cy="90" r="3.200"></circle>
     </svg>
   </div>
 
   <div class="card markbox" aria-hidden="true">
-    <svg viewBox={`-8 -8 ${7 * cell + 16} ${8 * cell + 16}`}>
+    <svg viewBox={`-8 -8 ${7 * cell + 16} ${glyph.length * cell + 16}`}>
       <defs>
-        <pattern id="dots" width="3.75" height="3.75" patternUnits="userSpaceOnUse">
-          <rect x="0.4" y="0.4" width="2.95" height="2.95" rx="0.7" fill="var(--brand)"></rect>
+        <pattern id="dots" width="3.750" height="3.750" patternUnits="userSpaceOnUse">
+          <rect x="0.400" y="0.400" width="2.950" height="2.950" rx="0.700" fill="var(--brand)"></rect>
         </pattern>
       </defs>
       {mark.map((m) => <rect x={m.x} y={m.y} width={cell} height={cell} fill="url(#dots)" />)}
@@ -85,15 +76,14 @@ const ticks = Array.from({ length: 60 }, (_, i) => i);
 <style>
   .widgets {
     display: grid;
-    grid-template-columns: minmax(0, 2.1fr) minmax(0, 1fr) minmax(0, 1fr);
-    gap: 12px;
-    margin-top: 40px;
+    grid-template-columns: minmax(0, 2.05fr) minmax(0, 1fr) minmax(0, 1fr);
+    gap: 15px;
+    margin-top: 33px;
   }
   .feat {
     display: flex;
-    gap: 16px;
-    padding: 12px;
-    min-height: 180px;
+    gap: 17px;
+    padding: 14px;
     transition: border-color 0.18s;
   }
   .feat:hover {
@@ -101,12 +91,14 @@ const ticks = Array.from({ length: 60 }, (_, i) => i);
   }
   .art {
     flex: none;
-    width: 154px;
+    width: 148px;
     aspect-ratio: 1;
     border-radius: 9px;
     overflow: hidden;
-    background: var(--bg);
-    view-transition-name: quorumdb-render;
+    background: #000;
+  }
+  [data-theme='light'] .art {
+    background: var(--soft);
   }
   .art img {
     width: 100%;
@@ -118,21 +110,30 @@ const ticks = Array.from({ length: 60 }, (_, i) => i);
     flex-direction: column;
     justify-content: flex-end;
     min-width: 0;
-    padding-bottom: 4px;
+  }
+  .k {
+    font-size: var(--tiny);
+    color: var(--muted);
+    line-height: 1.34;
   }
   .t {
-    font-size: 15px;
+    font-size: var(--text);
     font-weight: 500;
-    margin-top: 2px;
+    line-height: 1.5;
+    margin-top: 3px;
   }
   .s {
     color: var(--muted);
-    font-size: 13px;
+    font-size: var(--small);
+    line-height: 1.43;
   }
   .go {
+    display: inline-flex;
+    align-items: center;
     align-self: flex-start;
-    margin-top: 10px;
-    padding: 3px 11px;
+    gap: 6px;
+    margin-top: 9px;
+    padding: 3px 11px 3px 9px;
     font-size: 12px;
     border-radius: 999px;
     background: var(--soft);
@@ -142,25 +143,29 @@ const ticks = Array.from({ length: 60 }, (_, i) => i);
   .markbox {
     display: grid;
     place-items: center;
-    padding: 10px;
-    aspect-ratio: 1;
+    padding: 7px;
   }
   .clock svg,
   .markbox svg {
     width: 100%;
-    height: 100%;
+    max-height: 100%;
   }
   .markbox svg {
-    width: 82%;
+    width: 80%;
+  }
+  .face {
+    fill: #0b0b0a;
   }
   .tick {
-    stroke: var(--faint);
+    stroke: #7d7a75;
+    stroke-width: 1;
   }
-  .hour-tick {
-    stroke: var(--fg);
+  .big {
+    stroke: #f4f2ef;
+    stroke-width: 2.4;
   }
   text {
-    fill: var(--fg);
+    fill: #f4f2ef;
     font-family: var(--sans);
     font-size: 21px;
     font-weight: 600;
@@ -170,10 +175,10 @@ const ticks = Array.from({ length: 60 }, (_, i) => i);
     transform-origin: 90px 90px;
   }
   .hand {
-    stroke: var(--fg);
+    stroke: #f4f2ef;
     stroke-linecap: round;
   }
-  .sec {
+  .sec-hand {
     stroke: var(--brand);
   }
   .pin {
@@ -185,6 +190,10 @@ const ticks = Array.from({ length: 60 }, (_, i) => i);
     }
     .feat {
       grid-column: 1 / -1;
+    }
+    .clock,
+    .markbox {
+      aspect-ratio: 1;
     }
   }
 </style>
