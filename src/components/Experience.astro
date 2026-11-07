@@ -3,28 +3,28 @@ import Ph from './Ph.astro';
 import { experience } from '../data/site';
 ---
 
-<section class="sec" id="experience" data-reveal style="--i:4">
+<section class="sec" id="experience" data-reveal>
   <h2>Experience</h2>
   <ul class="jobs">
     {
       experience.map((job) => (
         <li>
           <div class="row">
-            <p>
+            <p class="what">
               <Ph text={job.title} />
-              <span class="at"> · </span>
+              <span class="muted"> · </span>
               {job.url ? (
-                <a class="link" href={job.url} target="_blank" rel="noopener">
+                <a href={job.url} target="_blank" rel="noopener">
                   {job.org}
                 </a>
               ) : (
                 job.org
               )}
             </p>
-            <p class="when">{job.when}</p>
+            {job.note && <p class="side">{job.note}</p>}
           </div>
-          {job.note && <p class="note">{job.note}</p>}
-          <p class="muted text">{job.text}</p>
+          <p class="when">{job.when}</p>
+          <p class="text">{job.text}</p>
         </li>
       ))
     }
@@ -42,22 +42,32 @@ import { experience } from '../data/site';
     justify-content: space-between;
     gap: 0 16px;
   }
-  .at {
-    color: var(--faint);
+  .what {
+    line-height: 1.5;
   }
+  .what a {
+    text-decoration: underline;
+    text-decoration-color: var(--line-2);
+    text-underline-offset: 4px;
+    transition: text-decoration-color 0.18s;
+  }
+  .what a:hover {
+    text-decoration-color: currentColor;
+  }
+  .side,
   .when {
     color: var(--muted);
-    font-size: 12.5px;
-    line-height: 24px;
-    white-space: nowrap;
+    font-size: var(--small);
+    line-height: 22px;
   }
-  .note {
-    font-size: 12.5px;
-    color: var(--faint);
+  .when {
+    line-height: 1.43;
+    margin-top: 2px;
   }
   .text {
-    max-width: 62ch;
-    font-size: 14px;
-    margin-top: 1px;
+    color: var(--muted);
+    font-size: var(--small);
+    line-height: 1.55;
+    margin-top: 5px;
   }
 </style>

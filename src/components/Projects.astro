@@ -4,6 +4,15 @@ import Icon from './Icon.astro';
 
 const base = import.meta.env.BASE_URL;
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+
+// Small outline icons for the pills, one per project.
+const pillIcons: Record<string, string> = {
+  quorumdb: 'M12 3l7 3v5c0 4.500-3 8-7 10-4-2-7-5.500-7-10V6zM9 12l2 2 4-4',
+  'cluster-scheduler': 'M4 7l8-4 8 4-8 4zM4 12l8 4 8-4M4 17l8 4 8-4',
+  kbsync: 'M13 3L5 14h6l-1 7 8-11h-6z',
+  facemesh: 'M12 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12zM8.500 14L7 21l5-3 5 3-1.500-7',
+  quizzera: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18',
+};
 ---
 
 <section class="sec" id="projects" data-reveal style="--i:3">
@@ -16,20 +25,27 @@ const projects = (await getCollection('projects')).sort((a, b) => a.data.order -
             <a class="title" href={`${base}projects/${id}/`}>
               {data.title}
             </a>
-            <span class="pill">{data.pill}</span>
+            <span class="pill">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d={pillIcons[id]} />
+              </svg>
+              {data.pill}
+            </span>
           </p>
-          <p class="muted">{data.blurb}</p>
+          <p class="muted desc">{data.blurb}</p>
           <p class="links">
-            <a href={`${base}projects/${id}/`}>Case study and 3D render →</a>
+            <a class="more" href={`${base}projects/${id}/`}>
+              Case study
+            </a>
             {data.repo && (
-              <a href={data.repo} target="_blank" rel="noopener">
+              <a class="more" href={data.repo} target="_blank" rel="noopener">
                 <Icon name="GitHub" size={12} />
                 GitHub
               </a>
             )}
             {data.live && (
-              <a href={data.live} target="_blank" rel="noopener">
-                Live site ↗
+              <a class="more" href={data.live} target="_blank" rel="noopener">
+                Live site
               </a>
             )}
           </p>
@@ -42,40 +58,29 @@ const projects = (await getCollection('projects')).sort((a, b) => a.data.order -
 <style>
   .list {
     display: grid;
-    gap: 22px;
+    gap: 19px;
   }
   .top {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 2px 9px;
+    gap: 2px 8px;
+    line-height: 1.5;
   }
   .title {
-    font-weight: 450;
-    text-decoration: underline;
-    text-decoration-color: transparent;
-    text-underline-offset: 3px;
-    transition: text-decoration-color 0.18s;
+    transition: opacity 0.18s;
   }
   .title:hover {
-    text-decoration-color: currentColor;
+    opacity: 0.7;
+  }
+  .desc {
+    margin-top: 2px;
+    line-height: 1.5;
   }
   .links {
     display: flex;
     flex-wrap: wrap;
-    gap: 2px 14px;
-    margin-top: 3px;
-    font-family: var(--mono);
-    font-size: 11.5px;
-    color: var(--faint);
-  }
-  .links a {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    transition: color 0.18s;
-  }
-  .links a:hover {
-    color: var(--fg);
+    gap: 2px 13px;
+    margin-top: 5px;
   }
 </style>
