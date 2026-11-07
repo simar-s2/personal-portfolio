@@ -28,6 +28,8 @@ export class Labels {
       const el = document.createElement('button');
       el.type = 'button';
       el.className = 'rl';
+      // On a phone, touches go through labels to the block or the drag underneath.
+      if (matchMedia('(max-width: 620px)').matches) el.tabIndex = -1;
       const name = document.createElement('span');
       name.className = 'rl-name';
       name.textContent = node.label;
