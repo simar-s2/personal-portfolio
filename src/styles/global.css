@@ -146,6 +146,11 @@ button {
   text-decoration-color: currentColor;
 }
 
+[data-theme='light'] .only-dark,
+[data-theme='dark'] .only-light {
+  display: none;
+}
+
 /* A value still to be filled in. Easy to spot on the page and in the source. */
 .ph {
   font-family: var(--mono);

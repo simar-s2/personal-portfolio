@@ -20,6 +20,7 @@ const TAN = Math.tan(FOV / 2);
 export class Camera {
   az = -0.62;
   el = 0.62;
+  fitEl = 0.62; // the fit uses the starting angle, so dragging never changes the zoom
   zoom = 1;
   dist = 30;
   aspect = 1.6;
@@ -40,7 +41,7 @@ export class Camera {
     this.aspect = aspect;
     // Far enough back that the scene fits both across and down.
     const across = this.radius / (TAN * aspect);
-    const down = (this.radius * Math.sin(this.el) + this.height) / TAN;
+    const down = (this.radius * Math.sin(this.fitEl) + this.height * 0.8) / TAN;
     this.dist = (Math.max(across, down) * 1.04) / this.zoom;
 
     const ce = Math.cos(this.el);
