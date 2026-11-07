@@ -3,6 +3,8 @@ name: Deploy
 on:
   push:
     branches: [main]
+  schedule:
+    - cron: '0 12 * * 1' # refresh the activity graph every week
   workflow_dispatch:
 
 permissions:
@@ -19,6 +21,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - run: node scripts/fetch-activity.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
       - uses: withastro/action@v6
 
   deploy:
