@@ -6,7 +6,7 @@ export const quorumdb: RScene = {
   caption:
     'Three replicas, one in each Google Cloud zone. The leader is shown open, with the parts inside it. Click any block to see what it does and where the code lives.',
   cta: 'Crash the leader',
-  camera: { az: -0.56, el: 0.66 },
+  camera: { az: -0.56, el: 0.56 },
   zones: [
     { label: 'quorumdb-0 · us-west1-a', x: -1.9, z: 0, w: 7.2, d: 7.6 },
     { x: 6.6, z: -5.2, w: 3.9, d: 3.9 },
