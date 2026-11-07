@@ -40,7 +40,8 @@ export class Camera {
     return [offset, right, cross(right, forward), forward];
   }
 
-  // Frames the scene from the starting angle. Dragging later never changes the zoom.
+  // Centers the scene and backs off just far enough to fit it. Run for every new angle,
+  // so nothing can rotate out of frame.
   fit(points: Float32Array, aspect: number): void {
     this.aspect = aspect;
     const [, r, u, f] = this.basis(this.az, this.el);

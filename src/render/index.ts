@@ -64,7 +64,6 @@ export function mount(root: HTMLElement): void {
     height = box.height;
     canvas.width = Math.max(1, Math.round(width * dpr));
     canvas.height = Math.max(1, Math.round(height * dpr));
-    cam.fit(built.bounds, width / Math.max(height, 1));
     labels.measure();
     refresh();
   };
@@ -231,6 +230,7 @@ export function mount(root: HTMLElement): void {
 
     if (calm && !dirty && !statesMoved && !spinning) return;
     dirty = false;
+    cam.fit(built.bounds, width / Math.max(height, 1));
     cam.update();
     labels.place(cam, width, height);
     renderer.draw(cam, still ? 0.37 : time, palette(), width);
