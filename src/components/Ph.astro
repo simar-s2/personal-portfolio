@@ -1,0 +1,11 @@
+---
+// Renders text normally, except anything in [square brackets], which is a
+// placeholder still waiting for real information.
+interface Props {
+  text: string;
+}
+
+const parts = Astro.props.text.split(/(\[[^\]]+\])/).filter(Boolean);
+---
+
+{parts.map((part) => (part.startsWith('[') ? <span class="ph">{part.slice(1, -1)}</span> : part))}
