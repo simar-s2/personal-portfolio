@@ -7,7 +7,9 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "check": "astro check"
+    "check": "astro check",
+    "posters": "node scripts/posters.mjs",
+    "activity": "node scripts/fetch-activity.mjs"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",
