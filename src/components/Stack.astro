@@ -1,0 +1,38 @@
+---
+import Icon from './Icon.astro';
+import { stack } from '../data/site';
+---
+
+<section class="sec" id="stack" data-reveal>
+  <h2>Tech Stack</h2>
+  <div class="groups">
+    {
+      stack.map(({ group, items }) => (
+        <div>
+          <p class="group">{group}</p>
+          <div class="chips">
+            {items.map((item) => (
+              <span class="chip">
+                <Icon name={item} size={12} />
+                {item}
+              </span>
+            ))}
+          </div>
+        </div>
+      ))
+    }
+  </div>
+</section>
+
+<style>
+  .groups {
+    display: grid;
+    gap: 20px;
+  }
+  .group {
+    color: var(--muted);
+    font-size: var(--small);
+    line-height: 1.43;
+    margin-bottom: 8px;
+  }
+</style>
