@@ -1,0 +1,81 @@
+---
+import { getCollection } from 'astro:content';
+import Icon from './Icon.astro';
+
+const base = import.meta.env.BASE_URL;
+const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+---
+
+<section class="sec" id="projects" data-reveal style="--i:3">
+  <h2>Projects</h2>
+  <ul class="list">
+    {
+      projects.map(({ id, data }) => (
+        <li>
+          <p class="top">
+            <a class="title" href={`${base}projects/${id}/`}>
+              {data.title}
+            </a>
+            <span class="pill">{data.pill}</span>
+          </p>
+          <p class="muted">{data.blurb}</p>
+          <p class="links">
+            <a href={`${base}projects/${id}/`}>Case study and 3D render →</a>
+            {data.repo && (
+              <a href={data.repo} target="_blank" rel="noopener">
+                <Icon name="GitHub" size={12} />
+                GitHub
+              </a>
+            )}
+            {data.live && (
+              <a href={data.live} target="_blank" rel="noopener">
+                Live site ↗
+              </a>
+            )}
+          </p>
+        </li>
+      ))
+    }
+  </ul>
+</section>
+
+<style>
+  .list {
+    display: grid;
+    gap: 22px;
+  }
+  .top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px 9px;
+  }
+  .title {
+    font-weight: 450;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 3px;
+    transition: text-decoration-color 0.18s;
+  }
+  .title:hover {
+    text-decoration-color: currentColor;
+  }
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 14px;
+    margin-top: 3px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--faint);
+  }
+  .links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: color 0.18s;
+  }
+  .links a:hover {
+    color: var(--fg);
+  }
+</style>
