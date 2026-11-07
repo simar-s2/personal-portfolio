@@ -10,7 +10,7 @@ export const site = {
   timezone: 'America/Vancouver',
   email: 'simarjot2468@gmail.com',
   github: { handle: 'simar-s2', url: 'https://github.com/simar-s2' },
-  linkedin: { handle: 'simarjot-singh2', url: 'https://www.linkedin.com/in/simarjot-singh2/' },
+  linkedin: { handle: 'singh-simar', url: 'https://www.linkedin.com/in/singh-simar/' },
   resume: '[resume PDF]',
   // Website ID from cloud.umami.is. Analytics stay off until this is filled in.
   umamiWebsiteId: '',
@@ -30,7 +30,6 @@ export const experience: Job[] = [
     title: 'Incoming Researcher',
     org: 'Parallel and Distributed Computing Lab, SFU',
     when: 'Jan 2027 – Apr 2027',
-    note: 'Incoming',
     text: 'Working on distributed graph mining systems.',
   },
   {
