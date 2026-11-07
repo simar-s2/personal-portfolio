@@ -50,7 +50,7 @@ The repo also has a Docker image and a script that trains both tests on an AWS G
 
 Error is the average distance between the predicted and real face points, in millimeters. Lower is better. I tested it two ways: new people, where 2 of the 12 are left out of training completely, and seen people, where every 10th frame is left out but everyone appears in training.
 
-| | Expression: baseline | Expression: model | Cleanup: average face | Cleanup: model |
+| Tested on | Expression: baseline | Expression: model | Cleanup: average face | Cleanup: model |
 |---|---|---|---|---|
 | New people | 1.58 | 1.58 | 5.28 | **2.59** |
 | Seen people | 1.41 | **0.45** | 4.32 | **0.83** |

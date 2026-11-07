@@ -29,7 +29,7 @@ const height = 7 * cell - (cell - size);
 
 <section class="sec" id="activity" data-reveal>
   <h2>Activity</h2>
-  <a class="card box" href={site.github.url} target="_blank" rel="noopener" aria-label={`${activity.total} GitHub contributions in the last year`}>
+  <a class="card box" href={site.github.url} target="_blank" rel="noopener">
     <div class="scroll">
       <svg viewBox={`0 -16 ${width} ${height + 16}`} aria-hidden="true">
         {labels.map((l) => <text x={l.x} y="-6">{l.text}</text>)}

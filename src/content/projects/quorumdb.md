@@ -60,7 +60,7 @@ On Google Cloud it runs as a Kubernetes StatefulSet on a regional GKE cluster in
 
 The chaos test crashes nodes, freezes them and cuts their network while clients keep working. After each run it checks that every save that got "OK" is still there, runs every answer through the [porcupine](https://github.com/anishathalye/porcupine) linearizability checker, and confirms all three nodes ended with the same data.
 
-| | On my laptop | On Google Cloud |
+| Measure | On my laptop | On Google Cloud |
 |---|---|---|
 | Runs where every check passed | **100 / 100** | **100 / 100** |
 | Saves that got "OK" but were lost | **0** of 87,994 | **0** of 578,289 |
