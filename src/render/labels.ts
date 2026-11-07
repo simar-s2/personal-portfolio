@@ -62,6 +62,11 @@ export class Labels {
     document.fonts?.ready.then(() => this.measure());
   }
 
+  destroy(): void {
+    for (const item of this.items) item.el.remove();
+    for (const zone of this.zones) zone.el.remove();
+  }
+
   measure(): void {
     for (const item of this.items) {
       item.w = item.el.offsetWidth;

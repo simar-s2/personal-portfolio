@@ -59,6 +59,15 @@ export interface RStep {
   tags?: Record<string, string>;
 }
 
+// One project as the renderer sees it. The home page passes all five.
+export interface REntry {
+  id: string;
+  title: string;
+  repo?: string;
+  href?: string; // its case study, shown on the home page
+  scene: RScene;
+}
+
 export interface RScene {
   nodes: RNode[];
   zones?: RZone[];

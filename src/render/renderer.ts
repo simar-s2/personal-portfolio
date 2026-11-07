@@ -55,19 +55,23 @@ export class Renderer {
   private gl: WebGL2RenderingContext;
   private programs: Record<string, { p: WebGLProgram; u: Record<string, WebGLUniformLocation | null> }> = {};
   private vaos: Record<string, WebGLVertexArrayObject> = {};
+  private sceneBuffers: WebGLBuffer[] = [];
   private indexCount: number;
-  private counts: { blocks: number; shadows: number; zones: number; curves: number; packets: number };
-  private blockStateBuf: WebGLBuffer;
-  private curveStateBuf: WebGLBuffer;
-  private packetStateBuf: WebGLBuffer;
-  readonly blockState: Float32Array;
-  readonly curveState: Float32Array;
-  readonly packetState: Float32Array;
+  private meshSign: WebGLBuffer;
+  private meshDir: WebGLBuffer;
+  private meshIndex: WebGLBuffer;
+  private quad: WebGLBuffer;
+  private strip: WebGLBuffer;
+  private built!: Built;
+  private counts = { blocks: 0, shadows: 0, zones: 0, curves: 0, packets: 0 };
+  private blockStateBuf!: WebGLBuffer;
+  private curveStateBuf!: WebGLBuffer;
+  private packetStateBuf!: WebGLBuffer;
+  blockState = new Float32Array(0);
+  curveState = new Float32Array(0);
+  packetState = new Float32Array(0);
 
-  constructor(
-    private canvas: HTMLCanvasElement,
-    private built: Built,
-  ) {
+  constructor(private canvas: HTMLCanvasElement) {
     const gl = canvas.getContext('webgl2', {
       alpha: true,
       antialias: true,
@@ -87,6 +91,27 @@ export class Renderer {
 
     const mesh = roundedBox();
     this.indexCount = mesh.index.length;
+    this.meshSign = this.data(mesh.sign);
+    this.meshDir = this.data(mesh.dir);
+    this.meshIndex = gl.createBuffer()!;
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.meshIndex);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, mesh.index, gl.STATIC_DRAW);
+    this.quad = this.data(new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]));
+    const strip = new Float32Array((WIRE_SEGMENTS + 1) * 4);
+    for (let i = 0; i <= WIRE_SEGMENTS; i++) {
+      strip.set([i / WIRE_SEGMENTS, -1, i / WIRE_SEGMENTS, 1], i * 4);
+    }
+    this.strip = this.data(strip);
+  }
+
+  // Swaps in a new scene. Shaders stay compiled, so switching projects doesn't stall.
+  load(built: Built): void {
+    const gl = this.gl;
+    for (const vao of Object.values(this.vaos)) gl.deleteVertexArray(vao);
+    for (const buffer of this.sceneBuffers) gl.deleteBuffer(buffer);
+    this.vaos = {};
+    this.sceneBuffers = [];
+    this.built = built;
     this.counts = {
       blocks: built.blocks.length / 9,
       shadows: built.shadows.length / 6,
@@ -97,66 +122,62 @@ export class Renderer {
     this.blockState = new Float32Array(this.counts.blocks * 4);
     this.curveState = new Float32Array(this.counts.curves * 3);
     this.packetState = new Float32Array(this.counts.packets * 2);
-
-    const quad = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
-    const strip = new Float32Array((WIRE_SEGMENTS + 1) * 4);
-    for (let i = 0; i <= WIRE_SEGMENTS; i++) {
-      strip.set([i / WIRE_SEGMENTS, -1, i / WIRE_SEGMENTS, 1], i * 4);
-    }
+    const own = (array: Float32Array, usage?: number) => {
+      const buffer = this.data(array, usage);
+      this.sceneBuffers.push(buffer);
+      return buffer;
+    };
 
     // Blocks
     this.vao('block');
-    this.attr(this.data(mesh.sign), [[0, 3, 0, 0, 0]]);
-    this.attr(this.data(mesh.dir), [[1, 3, 0, 0, 0]]);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.createBuffer());
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, mesh.index, gl.STATIC_DRAW);
-    this.attr(this.data(built.blocks), [
+    this.attr(this.meshSign, [[0, 3, 0, 0, 0]]);
+    this.attr(this.meshDir, [[1, 3, 0, 0, 0]]);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.meshIndex);
+    this.attr(own(built.blocks), [
       [2, 3, 36, 0, 1],
       [3, 3, 36, 12, 1],
       [4, 2, 36, 24, 1],
       [5, 1, 36, 32, 1],
     ]);
-    this.blockStateBuf = this.data(this.blockState, gl.DYNAMIC_DRAW);
+    this.blockStateBuf = own(this.blockState, gl.DYNAMIC_DRAW);
     this.attr(this.blockStateBuf, [[6, 4, 0, 0, 1]]);
 
     // Ground, zones and shadows
-    const quadBuf = this.data(quad);
     this.vao('ground');
-    this.attr(quadBuf, [[0, 2, 0, 0, 0]]);
+    this.attr(this.quad, [[0, 2, 0, 0, 0]]);
     this.vao('zone');
-    this.attr(quadBuf, [[0, 2, 0, 0, 0]]);
-    this.attr(this.data(built.zones), [[1, 4, 0, 0, 1]]);
+    this.attr(this.quad, [[0, 2, 0, 0, 0]]);
+    this.attr(own(built.zones), [[1, 4, 0, 0, 1]]);
     this.vao('shadow');
-    this.attr(quadBuf, [[0, 2, 0, 0, 0]]);
-    this.attr(this.data(built.shadows), [
+    this.attr(this.quad, [[0, 2, 0, 0, 0]]);
+    this.attr(own(built.shadows), [
       [1, 4, 24, 0, 1],
       [2, 2, 24, 16, 1],
     ]);
 
     // Wires
     this.vao('wire');
-    this.attr(this.data(strip), [[0, 2, 0, 0, 0]]);
-    const curves = this.data(built.curves);
-    this.attr(curves, [
+    this.attr(this.strip, [[0, 2, 0, 0, 0]]);
+    this.attr(own(built.curves), [
       [1, 3, 48, 0, 1],
       [2, 3, 48, 12, 1],
       [3, 3, 48, 24, 1],
       [4, 3, 48, 36, 1],
     ]);
-    this.curveStateBuf = this.data(this.curveState, gl.DYNAMIC_DRAW);
+    this.curveStateBuf = own(this.curveState, gl.DYNAMIC_DRAW);
     this.attr(this.curveStateBuf, [[5, 3, 0, 0, 1]]);
 
     // Packets, and the points of a cloud
     this.vao('packet');
-    this.attr(quadBuf, [[0, 2, 0, 0, 0]]);
-    this.attr(this.data(built.packets), [
+    this.attr(this.quad, [[0, 2, 0, 0, 0]]);
+    this.attr(own(built.packets), [
       [1, 3, 60, 0, 1],
       [2, 3, 60, 12, 1],
       [3, 3, 60, 24, 1],
       [4, 3, 60, 36, 1],
       [5, 3, 60, 48, 1],
     ]);
-    this.packetStateBuf = this.data(this.packetState, gl.DYNAMIC_DRAW);
+    this.packetStateBuf = own(this.packetState, gl.DYNAMIC_DRAW);
     this.attr(this.packetStateBuf, [[6, 2, 0, 0, 1]]);
     gl.bindVertexArray(null);
   }
