@@ -1,9 +1,13 @@
 ---
 import { getCollection } from 'astro:content';
 import Icon from './Icon.astro';
+import { scenes } from '../scenes';
 
 const base = import.meta.env.BASE_URL;
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+
+// What the live preview draws for each project.
+const entries = projects.flatMap((p) => (scenes[p.id] ? [{ id: p.id, title: p.data.title, scene: scenes[p.id] }] : []));
 
 // Where the project lives, for the line under its preview: the repo, or the site if the repo is private.
 const where = (p: { repo?: string; live?: string }) =>
@@ -58,13 +62,14 @@ const pillIcons: Record<string, string> = {
         ))
       }
     </ul>
-    <div class="peek" aria-hidden="true">
+    <div class="peek" aria-hidden="true" inert>
       <div class="card peek-card">
         <div class="peek-top">
           <div class="peek-art">
             <img class="only-dark" alt="" width="480" height="300" />
             <img class="only-light" alt="" width="480" height="300" />
             <canvas></canvas>
+            <div class="peek-labels"></div>
           </div>
         </div>
         <p class="peek-meta">
@@ -74,12 +79,13 @@ const pillIcons: Record<string, string> = {
       </div>
     </div>
   </div>
+  <script type="application/json" data-scenes set:html={JSON.stringify(entries)} />
 </section>
 
 <style>
   .split {
     display: grid;
-    gap: 32px;
+    gap: 28px;
   }
   .list {
     display: grid;
@@ -127,7 +133,7 @@ const pillIcons: Record<string, string> = {
   }
   @media (min-width: 1024px) {
     .split {
-      grid-template-columns: minmax(0, 1fr) 280px;
+      grid-template-columns: minmax(0, 1fr) 300px;
     }
     .peek {
       display: block;
@@ -166,7 +172,7 @@ const pillIcons: Record<string, string> = {
   }
   .peek-art {
     position: relative;
-    aspect-ratio: 16 / 9;
+    aspect-ratio: 4 / 3;
     overflow: hidden;
     border-radius: 8px;
     background: #000;
@@ -175,7 +181,8 @@ const pillIcons: Record<string, string> = {
     background: var(--soft);
   }
   .peek-art img,
-  .peek-art canvas {
+  .peek-art canvas,
+  .peek-labels {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -188,8 +195,46 @@ const pillIcons: Record<string, string> = {
     opacity: 0;
     transition: opacity 0.25s;
   }
-  .live canvas {
+  .live canvas,
+  .live .peek-labels {
     opacity: 1;
+  }
+
+  /* Block names, smaller than on the case studies. Labels that would overlap are left out. */
+  .peek-labels {
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+  .peek-labels :global(.rl) {
+    position: absolute;
+    left: 0;
+    top: 0;
+    padding: 1px 6px 2px;
+    white-space: nowrap;
+    font-size: 10.5px;
+    font-weight: 500;
+    line-height: 1.3;
+    color: var(--fg);
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    will-change: transform;
+    transition: opacity 0.2s;
+  }
+  .peek-labels :global(.rl-sub),
+  .peek-labels :global(.rz) {
+    display: none;
+  }
+  .peek-labels :global(.rl-tag:not(:empty)) {
+    margin-left: 4px;
+    color: var(--brand);
+  }
+  .peek-labels :global(.rl.on) {
+    border-color: var(--brand);
+  }
+  .peek-labels :global(.rl.behind) {
+    opacity: 0;
   }
   .live img {
     visibility: hidden;
@@ -230,12 +275,12 @@ const pillIcons: Record<string, string> = {
     const list = split.querySelector<HTMLElement>('.list')!;
     const card = split.querySelector<HTMLElement>('.peek-card')!;
     const canvas = card.querySelector('canvas')!;
+    const labelHost = card.querySelector<HTMLElement>('.peek-labels')!;
     const [dark, light] = card.querySelectorAll('img');
     const where = card.querySelector('.peek-where')!;
     const gh = card.querySelector<HTMLElement>('.peek-gh')!;
     const wide = matchMedia('(min-width: 1024px)');
-    // The scenes are already on the page for the main render.
-    const scenes = document.querySelector('[data-render] [data-scenes]');
+    const scenes = split.parentElement!.querySelector('[data-scenes]');
     let view: Glance | null = null;
     let loading: Promise<void> | null = null;
     let shown = '';
@@ -244,7 +289,7 @@ const pillIcons: Record<string, string> = {
     const load = () =>
       (loading ??= scenes
         ? import('../render/glance').then(({ glance }) => {
-            view = glance(canvas, JSON.parse(scenes.textContent!), () => card.classList.add('live'));
+            view = glance(canvas, labelHost, JSON.parse(scenes.textContent!), () => card.classList.add('live'));
             if (open) view?.show(shown);
           })
         : Promise.resolve());
@@ -264,12 +309,15 @@ const pillIcons: Record<string, string> = {
       const lowest = Math.max(0, list.offsetHeight - card.offsetHeight);
       card.style.top = `${Math.min(Math.max(0, top), lowest)}px`;
       card.classList.add('on');
+      // The rest of the page steps back while a project is in focus, as on the reference.
+      document.documentElement.dataset.spot = '';
       open = true;
       view?.show(id);
       load();
     };
     const hide = () => {
       open = false;
+      delete document.documentElement.dataset.spot;
       card.classList.remove('on');
       view?.stop();
     };

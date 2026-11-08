@@ -1,9 +1,10 @@
-// The small live render beside the project list. One WebGL context for all five projects:
-// pointing at a project swaps its scene in, and the compiled shaders are reused.
+// The live render beside the project list, with the names of the blocks. One WebGL context for
+// all five projects: pointing at a project swaps its scene in, and the compiled shaders are reused.
 
 import { build, type Built } from './build';
 import { Camera } from './camera';
 import { Focus } from './focus';
+import { Labels } from './labels';
 import { palettes, Renderer } from './renderer';
 import type { REntry } from './types';
 
@@ -12,7 +13,12 @@ export interface Glance {
   stop(): void;
 }
 
-export function glance(canvas: HTMLCanvasElement, entries: REntry[], onDraw: () => void): Glance | null {
+export function glance(
+  canvas: HTMLCanvasElement,
+  labelHost: HTMLElement,
+  entries: REntry[],
+  onDraw: () => void,
+): Glance | null {
   let renderer: Renderer;
   try {
     renderer = new Renderer(canvas);
@@ -27,6 +33,7 @@ export function glance(canvas: HTMLCanvasElement, entries: REntry[], onDraw: () 
   let current = '';
   let built: Built | null = null;
   let focus: Focus | null = null;
+  let labels: Labels | null = null;
   let states = {
     block: renderer.blockState,
     curve: renderer.curveState,
@@ -71,6 +78,7 @@ export function glance(canvas: HTMLCanvasElement, entries: REntry[], onDraw: () 
 
     if (focus.tick(dt, states, force)) {
       renderer.writeStates();
+      labels?.setStates(focus.nodes);
       force = false;
       dirty = true;
     }
@@ -88,6 +96,7 @@ export function glance(canvas: HTMLCanvasElement, entries: REntry[], onDraw: () 
 
     cam.fit(built.bounds, width / Math.max(height, 1));
     cam.update();
+    labels?.place(cam, width, height);
     renderer.draw(cam, time, palette(), width);
     onDraw();
   };
@@ -113,6 +122,8 @@ export function glance(canvas: HTMLCanvasElement, entries: REntry[], onDraw: () 
           packet: renderer.packetState,
         };
         focus = new Focus(entry.scene, built);
+        labels?.destroy();
+        labels = new Labels(labelHost, entry.scene, built, { hover() {}, pick() {} });
         force = true;
         dirty = true;
         home = {
