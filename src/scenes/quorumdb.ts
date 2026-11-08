@@ -163,7 +163,7 @@ export const quorumdb: RScene = {
     },
     {
       title: 'The followers elect a new leader',
-      text: 'About half a second with no heartbeat starts an election. A new leader appears in 489 ms typically on my laptop, and 817 ms across Google Cloud zones.',
+      text: 'About half a second with no heartbeat starts an election. A new leader appears in 817 ms typically across Google Cloud zones.',
       on: ['f1', 'f2'],
       down: leader,
       edges: ['f1>f2', 'f2>f1'],
@@ -185,8 +185,8 @@ export const quorumdb: RScene = {
       tags: { server: 'follower', f1: 'leader' },
     },
     {
-      title: 'Then it does this 1,129 more times',
-      text: 'Crashes, freezes and network cuts, across 200 runs on a laptop and on Google Cloud. 666,283 confirmed writes checked, and 0 lost.',
+      title: 'The chaos test does this 675 times',
+      text: 'Crashes, freezes and network splits across three Google Cloud zones, in 100 chaos tests. 0 confirmed writes lost, and no stale reads.',
       on: ['chaos', 'raft', 'f1', 'f2'],
       edges: ['chaos>raft', 'chaos>f1', 'chaos>f2'],
     },

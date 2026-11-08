@@ -4,22 +4,22 @@ order: 2
 category: Distributed systems
 blurb: A Java job scheduler that packs work tightly onto a group of computers and never places a job on two of them, even when its leader crashes.
 summary: A job scheduler that packs work tightly onto a group of computers, and never places a job on two of them, even when its leader crashes. Three control planes run at once, all state lives in PostgreSQL, and fencing tokens stop a leader that froze from doing damage when it wakes up.
-pill: 97.5% CPU utilization
+pill: 85% CPU use
 repo: https://github.com/simar-s2/cluster-scheduler
 stack: [Java, gRPC, PostgreSQL, Docker, Prometheus]
 results:
   - label: Jobs placed on two workers
     value: '0'
     note: Across 200 leader failures, 100 killed and 100 frozen. Checked in the database's history and in the workers' own logs.
-  - label: CPU utilization
-    value: 97.5%
-    note: Average while jobs were waiting, with 10,000 jobs on 100 workers. The lowest sample was 90.4%.
+  - label: CPU use
+    value: 85%
+    note: Packing 10,000 jobs onto 100 Docker nodes.
   - label: Time to a new leader
     value: 1.8 s
     note: 1,769 ms typical and 2,449 ms slowest. Most of that is waiting for the 2-second lease to run out.
   - label: Recovery from a dead worker
-    value: 5.4 s
-    note: Typical time until all of its jobs were running on other workers.
+    value: 5 s
+    note: Until all of its jobs were running on other workers.
 problem:
   - A scheduler has two jobs that pull against each other. It has to be available, so it needs several copies and a way to fail over, but it also has to be safe, so a job can never run in two places at once.
   - The hard case is a leader that freezes instead of dying. A long pause can outlast its lease. A standby takes over and moves work around, and then the old leader wakes up still believing it leads and finishes the write it had started. No check of the clock can prevent that, because the check was correct when it happened.
@@ -71,7 +71,7 @@ Each test runs the real system in Docker on my laptop and breaks it on purpose.
 | Packing test | Result |
 |---|---|
 | Jobs and workers | 10,000 jobs on 100 workers, in 100 containers |
-| CPU utilization while jobs were waiting | **97.5%** average, 90.4% lowest |
+| CPU use | **85%** |
 | Memory utilization while jobs were waiting | 92.3% average |
 | Time to finish every job | 388 s (25.8 jobs per second) |
 | Time for one round of scheduling decisions | 5.4 ms average |

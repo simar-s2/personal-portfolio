@@ -214,7 +214,7 @@ export const clusterScheduler: RScene = {
     },
     {
       title: 'A worker dies',
-      text: 'It goes quiet for 5 seconds and is declared dead. The reconcile loop moves its jobs, all running elsewhere in 5.4 seconds typically. 200 leader failures, 0 jobs on two workers.',
+      text: 'It goes quiet for 5 seconds and is declared dead. The reconcile loop moves its jobs, all running elsewhere within 5 seconds. 200 leader failures, 0 jobs on two workers.',
       on: ['cp2', 'w1'],
       down: ['w3'],
       edges: ['cp2>w1'],

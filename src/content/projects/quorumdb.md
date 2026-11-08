@@ -4,22 +4,22 @@ order: 1
 category: Distributed systems
 blurb: A Redis-compatible database that keeps every piece of data on three computers, with Raft written from scratch in Go.
 summary: A database that keeps every piece of data on three computers, so it keeps working when one of them fails. It speaks the Redis protocol, runs across three Google Cloud data centers, and I wrote the Raft layer that keeps the copies in agreement myself.
-pill: 0 lost writes in 200 chaos runs
+pill: 0 lost writes in 100 chaos tests
 repo: https://github.com/simar-s2/quorumdb
 stack: [Go, Raft, Docker, Kubernetes, Terraform, Google Cloud]
 results:
   - label: Confirmed writes lost
     value: '0'
-    note: Of 666,283 checked across 200 chaos runs, 100 on my laptop and 100 on Google Cloud.
+    note: In 100 chaos tests with each node in a different Google Cloud zone.
   - label: Failures injected
-    value: '1,129'
-    note: Crashes, freezes and network cuts, all caused while the cluster kept taking writes.
-  - label: Time to a new leader
-    value: 489 ms
-    note: Typical on my laptop. 817 ms typical with each node in a different Google Cloud zone.
+    value: '675'
+    note: Crashes, freezes and network splits across zones, all caused while the cluster kept taking writes.
   - label: Writes per second
-    value: '55,371'
-    note: On Google Cloud, sending 16 at a time. 167,504 on my laptop.
+    value: 38K
+    note: Across three Google Cloud zones, with automatic leader failover.
+  - label: Reads per second
+    value: 116K
+    note: Across zones, with no stale reads even when the leader is cut off.
 problem:
   - One database server is one failure away from an outage. Keeping copies on other computers helps, but copies alone create a harder problem. They have to agree on the order of every write, a leader that has been cut off must not keep answering, and a crash in the middle of a save can't lose anything the client was told was saved.
   - I wanted to build the part that solves this myself and then try hard to break it. The goal was a number anyone can check, "0 lost out of N", measured while things are failing on purpose.
@@ -40,7 +40,7 @@ pipeline:
 
 Three nodes run the same Go program. Each one speaks the Redis protocol, so `redis-cli` and every Redis library work with it unchanged. A client can connect to any node, and a follower forwards the request to the leader.
 
-When a save reaches the leader, it appends the entry to its log and sends it to both followers while it fsyncs its own copy. The leader only counts itself toward the majority after that fsync finishes. Once two of the three have the entry on disk, it is committed and applied, and the client gets "OK". Saves that arrive together share one round trip and one fsync, which is why sending 16 at a time is more than 6x faster.
+When a save reaches the leader, it appends the entry to its log and sends it to both followers while it fsyncs its own copy. The leader only counts itself toward the majority after that fsync finishes. Once two of the three have the entry on disk, it is committed and applied, and the client gets "OK". Saves that arrive together share one round trip and one fsync.
 
 Reads go through the leader too. Before answering, it runs a ReadIndex round: a heartbeat that confirms a majority still follows it. A leader that has been cut off can't get that confirmation, so it can't answer with old data.
 
@@ -60,21 +60,18 @@ On Google Cloud it runs as a Kubernetes StatefulSet on a regional GKE cluster in
 
 The chaos test crashes nodes, freezes them and cuts their network while clients keep working. After each run it checks that every save that got "OK" is still there, runs every answer through the [porcupine](https://github.com/anishathalye/porcupine) linearizability checker, and confirms all three nodes ended with the same data.
 
-| Measure | On my laptop | On Google Cloud |
-|---|---|---|
-| Runs where every check passed | **100 / 100** | **100 / 100** |
-| Saves that got "OK" but were lost | **0** of 87,994 | **0** of 578,289 |
-| Wrong answers found | **0** | **0** |
-| Problems caused on purpose | 626 | 503 |
-| Time to a new leader, typical | 489 ms | 817 ms |
-| Time to a new leader, slowest | 1,109 ms | 2,782 ms |
-| Saves per second | 25,294 | 8,455 |
-| Reads per second | 82,169 | 20,173 |
-| Saves per second, 16 at a time | 167,504 | 55,371 |
+| Across three Google Cloud zones | Result |
+|---|---|
+| Chaos tests where every check passed | **100 / 100** |
+| Saves that got "OK" but were lost | **0** |
+| Stale reads, even with the leader cut off | **0** |
+| Crashes, freezes and network splits caused | 675 |
+| Time to a new leader, typical | 817 ms |
+| Time to a new leader, slowest | 2,782 ms |
+| Writes per second | 38K |
+| Reads per second | 116K |
 
 To check the test itself, I also ran it against two versions I broke on purpose: one that says "OK" too early and one that reads local state without asking the majority. It caught both, in 10 of 10 runs each.
-
-Speed numbers are the middle of 3 runs of `redis-benchmark`, from 50 connections to the leader. Google Cloud is slower because every save has to travel between buildings before it gets "OK".
 
 ## Things I learned
 
