@@ -20,14 +20,16 @@ const ticks = Array.from({ length: 60 }, (_, i) => {
   <section class="now">
     <h2>Currently</h2>
     <p class="muted">
-      Studying Math and Computer Science at Simon Fraser University. I build backend systems and the
-      cloud infrastructure they run on. Right now I'm finishing an internship at DarkVision and moving a
-      5,000+ user website to AWS with Develop for Good. In January I join SFU's Parallel and Distributed
-      Computing Lab to work on distributed graph mining systems.
+      Studying Math and Computer Science at Simon Fraser University, on the Dean's Honour Roll. I build
+      backend systems and the cloud infrastructure they run on. Right now I'm finishing a site reliability
+      internship at DarkVision and moving a 5,000+ user website to AWS with Develop for Good. In January I
+      join Prof. Keval Vora's Parallel and Distributed Computing Lab at SFU to work on distributed graph
+      mining systems.
     </p>
   </section>
 
-  <div class="card clock" role="img" aria-label="Current time in Vancouver">
+  <div class="card clock" role="img" tabindex="0" aria-label="Current time in Vancouver, British Columbia">
+    <span class="tip" aria-hidden="true">Vancouver, British Columbia</span>
     <svg viewBox="0 0 180 180" data-clock>
       <rect width="180" height="180" rx="24" class="face"></rect>
       {ticks.map((t) => <line x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} class={t.big ? 'big' : 'tick'} />)}
@@ -79,6 +81,8 @@ const ticks = Array.from({ length: 60 }, (_, i) => {
     border-color: var(--line);
   }
   .clock {
+    position: relative;
+    outline-offset: 3px;
     display: grid;
     place-items: center;
     padding: 6px;
@@ -87,6 +91,38 @@ const ticks = Array.from({ length: 60 }, (_, i) => {
   .clock svg {
     width: 100%;
     max-height: 100%;
+  }
+  /* Where the clock is, shown on hover after a short wait, like the reference's tooltip. */
+  .tip {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 8px);
+    z-index: 2;
+    padding: 4px 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 16px;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgb(0 0 0 / 0.4);
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, 3px) scale(0.97);
+    transition:
+      opacity 0.15s,
+      transform 0.15s;
+  }
+  .clock:hover .tip,
+  .clock:focus-visible .tip {
+    opacity: 1;
+    transform: translate(-50%, 0);
+    transition-delay: 0.2s;
+  }
+  :global([data-theme='light']) .tip {
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.06);
   }
   .face {
     fill: #0b0b0a;
@@ -131,26 +167,58 @@ const ticks = Array.from({ length: 60 }, (_, i) => {
 </style>
 
 <script>
+  // Vancouver time. The second hand sweeps smoothly, unless motion is turned down, and the
+  // clock only runs while it is on screen.
+  const card = document.querySelector<HTMLElement>('.clock');
   const hands = document.querySelectorAll<SVGGElement>('[data-hand]');
-  const clock = new Intl.DateTimeFormat('en-CA', {
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const format = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'America/Vancouver',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
     hour: 'numeric',
     minute: 'numeric',
     second: 'numeric',
     hourCycle: 'h23',
   });
 
-  function tick() {
-    const parts = Object.fromEntries(clock.formatToParts(new Date()).map((p) => [p.type, +p.value]));
-    const seconds = parts.second!;
-    const minutes = parts.minute! + seconds / 60;
-    const hours = (parts.hour! % 12) + minutes / 60;
+  // How far Vancouver's wall clock is from UTC, checked again every minute for daylight saving.
+  let offset = 0;
+  let synced = -Infinity;
+  const sync = (now: number) => {
+    const p = Object.fromEntries(format.formatToParts(now).map((x) => [x.type, +x.value]));
+    const wall = Date.UTC(p.year!, p.month! - 1, p.day!, p.hour!, p.minute!, p.second!);
+    offset = wall - (now - (now % 1000));
+    synced = now;
+  };
+
+  const draw = () => {
+    const now = Date.now();
+    if (now - synced > 60_000) sync(now);
+    const t = (now + offset) / 1000;
+    const seconds = calm ? Math.floor(t % 60) : t % 60;
+    const minutes = (t / 60) % 60;
+    const hours = (t / 3600) % 12;
     const angles = { h: hours * 30, m: minutes * 6, s: seconds * 6 };
     for (const hand of hands) {
       hand.style.transform = `rotate(${angles[hand.dataset.hand as keyof typeof angles]}deg)`;
     }
-  }
+  };
 
-  tick();
-  setInterval(() => document.hidden || tick(), 1000);
+  let raf = 0;
+  let timer = 0;
+  const loop = () => {
+    draw();
+    raf = requestAnimationFrame(loop);
+  };
+  const run = (on: boolean) => {
+    cancelAnimationFrame(raf);
+    clearInterval(timer);
+    if (!on) return;
+    if (calm) timer = window.setInterval(draw, 1000);
+    else raf = requestAnimationFrame(loop);
+  };
+  draw();
+  if (card) new IntersectionObserver(([entry]) => run(!!entry?.isIntersecting)).observe(card);
 </script>
