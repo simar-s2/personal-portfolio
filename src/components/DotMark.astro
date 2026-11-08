@@ -1,0 +1,298 @@
+---
+// The letter S as orange dots, drawn the way the reference site draws its monogram. The dots move
+// away from the cursor, a tap sends a ring through them, and a band of light crosses every few
+// seconds. The SVG is the same S for anyone without JavaScript.
+const glyph = ['.#####.', '##...##', '##.....', '.#####.', '.....##', '##...##', '.#####.'];
+const cell = 15;
+const mark = glyph.flatMap((row, y) =>
+  [...row].flatMap((c, x) => (c === '#' ? [{ x: x * cell, y: y * cell }] : [])),
+);
+---
+
+<div
+  class="card markbox"
+  role="img"
+  aria-label="An S drawn in orange dots that move away from the cursor. Tap to send a pulse through them."
+  data-dots={glyph.join(' ')}
+>
+  <svg viewBox={`-8 -8 ${7 * cell + 16} ${glyph.length * cell + 16}`} aria-hidden="true">
+    <defs>
+      <pattern id="dots" width="3.750" height="3.750" patternUnits="userSpaceOnUse">
+        <rect x="0.400" y="0.400" width="2.950" height="2.950" rx="0.700" fill="var(--brand)"></rect>
+      </pattern>
+    </defs>
+    {mark.map((m) => <rect x={m.x} y={m.y} width={cell} height={cell} fill="url(#dots)" />)}
+  </svg>
+  <canvas></canvas>
+</div>
+
+<style>
+  .markbox {
+    position: relative;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1;
+    overflow: hidden;
+    cursor: crosshair;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  svg {
+    width: 80%;
+  }
+  canvas {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  :global(.js) svg {
+    display: none;
+  }
+</style>
+
+<script>
+  const box = document.querySelector<HTMLElement>('[data-dots]');
+  const ctx = box?.querySelector('canvas')?.getContext('2d');
+  if (box && ctx) dots(box, ctx);
+
+  function dots(box: HTMLElement, ctx: CanvasRenderingContext2D) {
+    const canvas = ctx.canvas;
+    const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Each block of the glyph is 5 × 5 dots, on a grid 48 dots wide like the reference.
+    const GRID = 48;
+    const PER = 5;
+    const rows = box.dataset.dots!.split(' ');
+    const midX = (rows[0]!.length * PER - 1) / 2;
+    const midY = (rows.length * PER - 1) / 2;
+    const gx: number[] = [];
+    const gy: number[] = [];
+    rows.forEach((row, y) =>
+      [...row].forEach((c, x) => {
+        if (c !== '#') return;
+        for (let sy = 0; sy < PER; sy++) {
+          for (let sx = 0; sx < PER; sx++) {
+            gx.push(x * PER + sx - midX);
+            gy.push(y * PER + sy - midY);
+          }
+        }
+      }),
+    );
+    const n = gx.length;
+    const homeX = new Float32Array(n);
+    const homeY = new Float32Array(n);
+    const x = new Float32Array(n);
+    const y = new Float32Array(n);
+    const vx = new Float32Array(n);
+    const vy = new Float32Array(n);
+
+    // How far along the top-left to bottom-right diagonal each dot sits, from 0 to 1.
+    const diag = gx.map((v, i) => v + gy[i]!);
+    const lo = Math.min(...diag);
+    const hi = Math.max(...diag);
+    const along = Float32Array.from(diag, (d) => (d - lo) / (hi - lo || 1));
+
+    let w = 0;
+    let h = 0;
+    let dpr = 1;
+    let radius = 0;
+    let reach = 0;
+    let ringSpeed = 0;
+    let ringBand = 0;
+    let brand = '#f04e15';
+    let shine = '#ffffff';
+    let clock = 0;
+    const pointer = { x: 0, y: 0, on: false };
+    const rings: { x: number; y: number; t0: number; r: number; fade: number }[] = [];
+
+    const colors = () => {
+      const root = document.documentElement;
+      brand = getComputedStyle(root).getPropertyValue('--brand').trim() || brand;
+      shine = root.dataset.theme === 'light' ? '#fff4ee' : '#ffffff';
+    };
+
+    const size = () => {
+      dpr = Math.min(devicePixelRatio || 1, 2.5);
+      w = Math.max(40, Math.round(box.clientWidth));
+      h = Math.max(40, Math.round(box.clientHeight));
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      const m = Math.min(w, h);
+      const pitch = (0.98 * m) / GRID;
+      radius = pitch / 2;
+      reach = 0.26 * m;
+      ringSpeed = 0.85 * m;
+      ringBand = 0.12 * m;
+      for (let i = 0; i < n; i++) {
+        homeX[i] = x[i] = w / 2 + gx[i]! * pitch;
+        homeY[i] = y[i] = h / 2 + gy[i]! * pitch;
+        vx[i] = vy[i] = 0;
+      }
+    };
+
+    const circle = (cx: number, cy: number, r: number) => {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    };
+
+    const draw = () => {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = brand;
+      ctx.beginPath();
+      for (let i = 0; i < n; i++) {
+        ctx.moveTo(x[i]! + radius, y[i]!);
+        ctx.arc(x[i]!, y[i]!, radius, 0, Math.PI * 2);
+      }
+      ctx.fill();
+
+      // A band of light crosses the S during the first 1.25 s of every 3.6 s.
+      const phase = (clock % 3.6) / 1.25;
+      if (!calm && !pointer.on && phase <= 1) {
+        const at = -0.2 + 1.4 * phase;
+        ctx.fillStyle = shine;
+        for (let i = 0; i < n; i++) {
+          const off = Math.abs(along[i]! - at);
+          if (off > 0.2) continue;
+          const k = 1 - off / 0.2;
+          const alpha = k * k * (3 - 2 * k) * 0.55;
+          if (alpha < 0.01) continue;
+          ctx.globalAlpha = alpha;
+          circle(x[i]!, y[i]!, radius * (1 + 0.35 * k));
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      if (rings.length) {
+        const m = Math.min(w, h);
+        ctx.save();
+        circle(w / 2, h / 2, 0.44 * m);
+        ctx.clip();
+        ctx.strokeStyle = brand;
+        for (const ring of rings) {
+          if (ring.r <= 0.5) continue;
+          ctx.globalAlpha = ring.fade * ring.fade * 0.16;
+          ctx.lineWidth = ringBand * 0.5;
+          circle(ring.x, ring.y, ring.r);
+          ctx.stroke();
+          ctx.globalAlpha = 0.6 * ring.fade ** 1.4;
+          ctx.lineWidth = Math.max(1, (m / 440) * 1.6);
+          circle(ring.x, ring.y, ring.r);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+    };
+
+    // Each frame, every dot is pulled back to its place, pushed out of a circle around the
+    // cursor and by a passing ring, then slowed down.
+    let raf = 0;
+    let nap = 0;
+    let visible = false;
+    const step = (now: number) => {
+      raf = 0;
+      clock = now / 1000;
+      for (let i = rings.length - 1; i >= 0; i--) {
+        const ring = rings[i]!;
+        const age = clock - ring.t0;
+        ring.r = age * ringSpeed;
+        ring.fade = 1 - age / 0.588;
+        if (ring.fade <= 0) rings.splice(i, 1);
+      }
+      const reach2 = reach * reach;
+      let fastest = 0;
+      for (let i = 0; i < n; i++) {
+        let fx = (homeX[i]! - x[i]!) * 0.045;
+        let fy = (homeY[i]! - y[i]!) * 0.045;
+        if (pointer.on) {
+          const dx = x[i]! - pointer.x;
+          const dy = y[i]! - pointer.y;
+          const d2 = dx * dx + dy * dy;
+          if (d2 < reach2 && d2 > 0.01) {
+            const d = Math.sqrt(d2);
+            const push = (1 - d / reach) * 3.8;
+            fx += (dx / d) * push;
+            fy += (dy / d) * push;
+          }
+        }
+        for (const ring of rings) {
+          const dx = x[i]! - ring.x;
+          const dy = y[i]! - ring.y;
+          const d = Math.sqrt(dx * dx + dy * dy) || 1e-4;
+          const off = Math.abs(d - ring.r);
+          if (off >= ringBand) continue;
+          const k = 1 - off / ringBand;
+          const push = 2.8 * ring.fade * k * k * (3 - 2 * k);
+          fx += (dx / d) * push;
+          fy += (dy / d) * push;
+        }
+        const nx = (vx[i]! + fx) * 0.86;
+        const ny = (vy[i]! + fy) * 0.86;
+        vx[i] = nx;
+        vy[i] = ny;
+        x[i] = x[i]! + nx;
+        y[i] = y[i]! + ny;
+        fastest = Math.max(fastest, nx * nx + ny * ny);
+      }
+      draw();
+
+      // Keep going while anything moves or the light is crossing. Otherwise sleep until the next crossing.
+      const into = clock % 3.6;
+      if (pointer.on || rings.length || fastest > 0.0025 || into < 1.25) wake();
+      else nap = window.setTimeout(wake, (3.6 - into) * 1000);
+    };
+    const wake = () => {
+      if (raf || !visible || calm) return;
+      clearTimeout(nap);
+      raf = requestAnimationFrame(step);
+    };
+    const sleep = () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(nap);
+      raf = 0;
+    };
+
+    colors();
+    size();
+    draw();
+    new ResizeObserver(() => {
+      size();
+      draw();
+    }).observe(box);
+    new MutationObserver(() => {
+      colors();
+      draw();
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    new IntersectionObserver(([entry]) => {
+      visible = !!entry?.isIntersecting;
+      if (visible) wake();
+      else sleep();
+    }).observe(box);
+
+    if (calm) return;
+    const local = (e: PointerEvent) => {
+      const b = canvas.getBoundingClientRect();
+      return [e.clientX - b.left, e.clientY - b.top] as const;
+    };
+    box.addEventListener('pointermove', (e) => {
+      [pointer.x, pointer.y] = local(e);
+      pointer.on = true;
+      wake();
+    });
+    const leave = () => {
+      pointer.on = false;
+      wake();
+    };
+    box.addEventListener('pointerleave', leave);
+    box.addEventListener('pointercancel', leave);
+    box.addEventListener('pointerdown', (e) => {
+      const [px, py] = local(e);
+      rings.length = 0;
+      rings.push({ x: px, y: py, t0: performance.now() / 1000, r: 0, fade: 1 });
+      wake();
+    });
+  }
+</script>
