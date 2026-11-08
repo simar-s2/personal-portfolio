@@ -5,6 +5,10 @@ import Icon from './Icon.astro';
 const base = import.meta.env.BASE_URL;
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
 
+// Where the project lives, for the line under its preview: the repo, or the site if the repo is private.
+const where = (p: { repo?: string; live?: string }) =>
+  (p.repo ?? p.live ?? '').replace(/^https:\/\/(www\.)?(github\.com\/)?/, '');
+
 // Small outline icons for the pills, one per project.
 const pillIcons: Record<string, string> = {
   quorumdb: 'M12 3l7 3v5c0 4.500-3 8-7 10-4-2-7-5.500-7-10V6zM9 12l2 2 4-4',
@@ -17,48 +21,80 @@ const pillIcons: Record<string, string> = {
 
 <section class="sec" id="projects" data-reveal style="--i:3">
   <h2>Projects</h2>
-  <ul class="list">
-    {
-      projects.map(({ id, data }) => (
-        <li>
-          <p class="top">
-            <a class="title" href={`${base}projects/${id}/`}>
-              {data.title}
-            </a>
-            <span class="pill">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d={pillIcons[id]} />
-              </svg>
-              {data.pill}
-            </span>
-          </p>
-          <p class="muted desc">{data.blurb}</p>
-          <p class="links">
-            <a class="more" href={`${base}projects/${id}/`} data-umami-event="Open case study" data-umami-event-project={id}>
-              Case study
-            </a>
-            {data.repo && (
-              <a class="more" href={data.repo} target="_blank" rel="noopener" data-umami-event="Open GitHub" data-umami-event-project={id}>
-                <Icon name="GitHub" size={12} />
-                GitHub
+  <div class="split" data-peek={base}>
+    <ul class="list">
+      {
+        projects.map(({ id, data }) => (
+          <li data-id={id} data-where={where(data)} data-gh={data.repo ? '' : undefined}>
+            <p class="top">
+              <a class="title" href={`${base}projects/${id}/`}>
+                {data.title}
               </a>
-            )}
-            {data.live && (
-              <a class="more" href={data.live} target="_blank" rel="noopener" data-umami-event="Open live site" data-umami-event-project={id}>
-                Live site
+              <span class="pill">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d={pillIcons[id]} />
+                </svg>
+                {data.pill}
+              </span>
+            </p>
+            <p class="muted desc">{data.blurb}</p>
+            <p class="links">
+              <a class="more" href={`${base}projects/${id}/`} data-umami-event="Open case study" data-umami-event-project={id}>
+                Case study
               </a>
-            )}
-          </p>
-        </li>
-      ))
-    }
-  </ul>
+              {data.repo && (
+                <a class="more" href={data.repo} target="_blank" rel="noopener" data-umami-event="Open GitHub" data-umami-event-project={id}>
+                  <Icon name="GitHub" size={12} />
+                  GitHub
+                </a>
+              )}
+              {data.live && (
+                <a class="more" href={data.live} target="_blank" rel="noopener" data-umami-event="Open live site" data-umami-event-project={id}>
+                  Live site
+                </a>
+              )}
+            </p>
+          </li>
+        ))
+      }
+    </ul>
+    <div class="peek" aria-hidden="true">
+      <div class="card peek-card">
+        <div class="peek-top">
+          <div class="peek-art">
+            <img class="only-dark" alt="" width="480" height="300" />
+            <img class="only-light" alt="" width="480" height="300" />
+            <canvas></canvas>
+          </div>
+        </div>
+        <p class="peek-meta">
+          <span class="peek-gh"><Icon name="GitHub" size={13} /></span>
+          <span class="peek-where"></span>
+        </p>
+      </div>
+    </div>
+  </div>
 </section>
 
 <style>
+  .split {
+    display: grid;
+    gap: 32px;
+  }
   .list {
     display: grid;
-    gap: 19px;
+    gap: 4px;
+  }
+  .list li {
+    margin: 0 -12px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: background-color 0.15s;
+  }
+  @media (hover: hover) {
+    .list li:hover {
+      background: color-mix(in srgb, var(--soft) 60%, transparent);
+    }
   }
   .top {
     display: flex;
@@ -83,4 +119,186 @@ const pillIcons: Record<string, string> = {
     gap: 2px 13px;
     margin-top: 5px;
   }
+
+  /* The live render of whichever project the pointer is on. Wide screens only, as on the reference. */
+  .peek {
+    position: relative;
+    display: none;
+  }
+  @media (min-width: 1024px) {
+    .split {
+      grid-template-columns: minmax(0, 1fr) 280px;
+    }
+    .peek {
+      display: block;
+    }
+  }
+  .peek-card {
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    overflow: hidden;
+    border-radius: 12px;
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.98);
+    transition:
+      opacity 0.1s,
+      transform 0.1s,
+      visibility 0s 0.1s;
+  }
+  .peek-card.on {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition: none;
+    animation: peek-in 0.18s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  @keyframes peek-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px) scale(0.98);
+    }
+  }
+  .peek-top {
+    padding: 6px;
+    border-bottom: 1px solid var(--line);
+  }
+  .peek-art {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: 8px;
+    background: #000;
+  }
+  :global([data-theme='light']) .peek-art {
+    background: var(--soft);
+  }
+  .peek-art img,
+  .peek-art canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .peek-art img {
+    object-fit: cover;
+  }
+  .peek-art canvas {
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+  .live canvas {
+    opacity: 1;
+  }
+  .live img {
+    visibility: hidden;
+    transition: visibility 0s 0.25s;
+  }
+  .peek-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 12px;
+    font-size: var(--small);
+    line-height: 1.43;
+    color: var(--muted);
+  }
+  .peek-where {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .peek-gh {
+    display: flex;
+    flex: none;
+  }
+  .peek-gh[hidden] {
+    display: none;
+  }
 </style>
+
+<script>
+  import type { Glance } from '../render/glance';
+
+  const split = document.querySelector<HTMLElement>('[data-peek]');
+  if (split) peek(split);
+
+  function peek(split: HTMLElement) {
+    const base = split.dataset.peek!;
+    const list = split.querySelector<HTMLElement>('.list')!;
+    const card = split.querySelector<HTMLElement>('.peek-card')!;
+    const canvas = card.querySelector('canvas')!;
+    const [dark, light] = card.querySelectorAll('img');
+    const where = card.querySelector('.peek-where')!;
+    const gh = card.querySelector<HTMLElement>('.peek-gh')!;
+    const wide = matchMedia('(min-width: 1024px)');
+    // The scenes are already on the page for the main render.
+    const scenes = document.querySelector('[data-render] [data-scenes]');
+    let view: Glance | null = null;
+    let loading: Promise<void> | null = null;
+    let shown = '';
+    let open = false;
+
+    const load = () =>
+      (loading ??= scenes
+        ? import('../render/glance').then(({ glance }) => {
+            view = glance(canvas, JSON.parse(scenes.textContent!), () => card.classList.add('live'));
+            if (open) view?.show(shown);
+          })
+        : Promise.resolve());
+
+    const show = (row: HTMLElement) => {
+      if (!wide.matches) return;
+      const id = row.dataset.id!;
+      if (id !== shown) {
+        shown = id;
+        dark!.src = `${base}posters/${id}-tile-dark.webp`;
+        light!.src = `${base}posters/${id}-tile-light.webp`;
+        where.textContent = row.dataset.where ?? '';
+        gh.hidden = !('gh' in row.dataset);
+      }
+      // Lines up with the row, but never hangs below the list.
+      const top = row.getBoundingClientRect().top - list.getBoundingClientRect().top;
+      const lowest = Math.max(0, list.offsetHeight - card.offsetHeight);
+      card.style.top = `${Math.min(Math.max(0, top), lowest)}px`;
+      card.classList.add('on');
+      open = true;
+      view?.show(id);
+      load();
+    };
+    const hide = () => {
+      open = false;
+      card.classList.remove('on');
+      view?.stop();
+    };
+
+    for (const row of list.querySelectorAll<HTMLElement>('li[data-id]')) {
+      row.addEventListener('pointerenter', (e) => {
+        if (e.pointerType === 'mouse') show(row);
+      });
+      row.addEventListener('focusin', () => show(row));
+    }
+    list.addEventListener('pointerleave', (e) => {
+      if (e.pointerType === 'mouse') hide();
+    });
+    list.addEventListener('focusout', (e) => {
+      if (!list.contains(e.relatedTarget as Node | null)) hide();
+    });
+    canvas.addEventListener('webglcontextlost', () => card.classList.remove('live'));
+
+    // Get the renderer ready a moment before anyone can point at a project.
+    if (wide.matches && matchMedia('(hover: hover)').matches) {
+      new IntersectionObserver(
+        ([entry], observer) => {
+          if (!entry?.isIntersecting) return;
+          observer.disconnect();
+          if ('requestIdleCallback' in window) requestIdleCallback(() => load());
+          else setTimeout(load, 200);
+        },
+        { rootMargin: '200px' },
+      ).observe(split);
+    }
+  }
+</script>
