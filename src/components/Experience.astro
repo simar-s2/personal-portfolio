@@ -1,30 +1,88 @@
 ---
+// Each job is one line until it's clicked, then it opens to what I did and what I used, as on the reference.
+import Icon from './Icon.astro';
 import Ph from './Ph.astro';
 import { experience } from '../data/site';
+
+const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const month = (text: string) => {
+  const [name, year] = text.trim().split(' ');
+  return Number(year) * 12 + months.indexOf(name!);
+};
+// "May 2026 – Dec 2026" becomes "8m", counting both ends.
+const length = (when: string) => {
+  const [from, to] = when.split('–');
+  const n = month(to!) - month(from!) + 1;
+  return [n >= 12 && `${Math.floor(n / 12)}y`, n % 12 && `${n % 12}m`].filter(Boolean).join(' ');
+};
 ---
 
 <section class="sec" id="experience" data-reveal>
   <h2>Experience</h2>
-  <ul class="jobs">
+  <ul class="jobs" data-jobs>
     {
-      experience.map((job) => (
-        <li>
-          <div class="row">
-            <p class="what">
-              <Ph text={job.title} />
-              <span class="muted"> · </span>
-              {job.url ? (
-                <a href={job.url} target="_blank" rel="noopener">
-                  {job.org}
-                </a>
-              ) : (
-                job.org
+      experience.map((job, i) => (
+        <li class="job">
+          <div class="top">
+            <div class="row">
+              <p class="what">
+                <button class="toggle" type="button" aria-expanded="false" aria-controls={`job-${i}`}>
+                  <Ph text={job.title} />
+                </button>
+                <span class="muted"> · </span>
+                {job.url ? (
+                  <a href={job.url} target="_blank" rel="noopener">
+                    {job.org}
+                  </a>
+                ) : (
+                  job.org
+                )}
+              </p>
+              <p class="side">
+                {job.location}
+                <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </p>
+            </div>
+            <p class="when">
+              {job.when} <span class="bar">|</span> {length(job.when)}
+              {job.note && (
+                <>
+                  {' '}
+                  <span class="bar">|</span> {job.note}
+                </>
               )}
             </p>
-            {job.note && <p class="side">{job.note}</p>}
           </div>
-          <p class="when">{job.when}</p>
-          <p class="text">{job.text}</p>
+          <div class="drawer" id={`job-${i}`}>
+            <div class="inner">
+              <p class="about">{job.text}</p>
+              {job.points && (
+                <ul class="points">
+                  {job.points.map((point) => (
+                    <li>
+                      <span aria-hidden="true">•</span>
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {job.tools && (
+                <>
+                  <p class="tools">Technologies & Tools</p>
+                  <ul class="chips">
+                    {job.tools.map((tool) => (
+                      <li class="chip">
+                        <Icon name={tool} size={12} fallback />
+                        {tool}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
+          </div>
         </li>
       ))
     }
@@ -34,16 +92,27 @@ import { experience } from '../data/site';
 <style>
   .jobs {
     display: grid;
-    gap: 22px;
+    gap: 24px;
+  }
+  .top {
+    cursor: pointer;
   }
   .row {
     display: flex;
     flex-wrap: wrap;
+    align-items: baseline;
     justify-content: space-between;
     gap: 0 16px;
   }
   .what {
     line-height: 1.5;
+  }
+  .toggle {
+    text-align: left;
+    transition: opacity 0.18s;
+  }
+  .top:hover .toggle {
+    opacity: 0.7;
   }
   .what a {
     text-decoration: underline;
@@ -58,16 +127,94 @@ import { experience } from '../data/site';
   .when {
     color: var(--muted);
     font-size: var(--small);
-    line-height: 22px;
+    line-height: 1.43;
+  }
+  .side {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .chev {
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .open .chev {
+    transform: rotate(180deg);
   }
   .when {
-    line-height: 1.43;
     margin-top: 2px;
   }
-  .text {
+  .bar {
+    opacity: 0.4;
+  }
+
+  /* Closed only when the script is there to open it. */
+  .drawer {
+    display: grid;
+    grid-template-rows: 1fr;
+  }
+  :global(.js) .drawer {
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition:
+      grid-template-rows 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  :global(.js) .open .drawer {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+  .inner {
+    min-height: 0;
+    overflow: hidden;
+  }
+  .about {
+    padding-top: 6px;
     color: var(--muted);
-    font-size: var(--small);
-    line-height: 1.55;
-    margin-top: 5px;
+    line-height: 1.6;
+  }
+  .points {
+    display: grid;
+    gap: 12px;
+    padding-top: 18px;
+  }
+  .points li {
+    display: flex;
+    gap: 8px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .points li > span:first-child {
+    opacity: 0.4;
+  }
+  .tools {
+    margin-top: 24px;
+    line-height: 1.5;
+  }
+  .chips {
+    margin: 12px 0 4px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js) .drawer,
+    .chev {
+      transition: none;
+    }
   }
 </style>
+
+<script>
+  // One job open at a time. The whole top line opens it, except the company link.
+  const jobs = [...document.querySelectorAll<HTMLElement>('[data-jobs] .job')];
+  const setOpen = (job: HTMLElement, open: boolean) => {
+    job.classList.toggle('open', open);
+    job.querySelector('.toggle')!.setAttribute('aria-expanded', String(open));
+    job.querySelector<HTMLElement>('.drawer')!.inert = !open;
+  };
+  for (const job of jobs) {
+    setOpen(job, false);
+    job.querySelector('.top')!.addEventListener('click', (e) => {
+      if ((e.target as Element).closest('a')) return;
+      const open = !job.classList.contains('open');
+      for (const other of jobs) setOpen(other, other === job && open);
+    });
+  }
+</script>
