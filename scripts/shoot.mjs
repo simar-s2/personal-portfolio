@@ -8,7 +8,7 @@ const args = process.argv.slice(2);
 const flags = args.filter((a) => a.startsWith('--'));
 const [path, out, width = '1440', height = '1000', theme = 'dark'] = args.filter((a) => !a.startsWith('--'));
 const code = flags.find((f) => f.startsWith('--js='))?.slice(5);
-const base = process.env.SHOOT_BASE ?? 'http://localhost:4321/personal-portfolio/';
+const base = process.env.SHOOT_BASE ?? 'http://localhost:4321/';
 
 const browser = await puppeteer.launch({
   executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',

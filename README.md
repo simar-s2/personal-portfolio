@@ -6,7 +6,7 @@
 
 **My personal site. Five projects, each with a 3D render of its architecture that you can drag, click and break.**
 
-[![Live site](https://img.shields.io/badge/live-simar--s2.github.io-f04e15?style=flat)](https://simar-s2.github.io/personal-portfolio/)
+[![Live site](https://img.shields.io/badge/live-simarsingh.dev-f04e15?style=flat)](https://simarsingh.dev)
 [![Astro](https://img.shields.io/badge/Astro-7-BC52EE?style=flat&logo=astro&logoColor=white)](astro.config.mjs)
 [![WebGL2: no 3D library](https://img.shields.io/badge/WebGL2-no_3D_library-111827?style=flat&logo=webgl&logoColor=white)](src/render)
 [![Renderer: 11 KB gzipped](https://img.shields.io/badge/renderer-11_KB_gzipped-2ea44f?style=flat)](src/render)
@@ -77,7 +77,7 @@ Frames were measured on a MacBook Pro (M1 Pro, Metal) at retina resolution. Ligh
 
 ```bash
 npm install
-npm run dev        # http://localhost:4321/personal-portfolio/
+npm run dev        # http://localhost:4321/
 ```
 
 To change the site:

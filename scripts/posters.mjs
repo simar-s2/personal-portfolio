@@ -6,7 +6,7 @@ import { mkdirSync } from 'node:fs';
 import puppeteer from 'puppeteer-core';
 import sharp from 'sharp';
 
-const base = process.env.SHOOT_BASE ?? 'http://localhost:4321/personal-portfolio/';
+const base = process.env.SHOOT_BASE ?? 'http://localhost:4321/';
 const ids = ['quorumdb', 'cluster-scheduler', 'kbsync', 'facemesh', 'quizzera'];
 mkdirSync('public/posters', { recursive: true });
 mkdirSync('public/og', { recursive: true });
