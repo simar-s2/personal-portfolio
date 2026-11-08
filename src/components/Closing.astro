@@ -1,5 +1,5 @@
 ---
-// The end of every page: the wordmark and quote on the home page, and the links everywhere.
+// The end of every page: a quote on the home page, and the links everywhere.
 import { site } from '../data/site';
 
 interface Props {
@@ -7,45 +7,14 @@ interface Props {
 }
 
 const { full = false } = Astro.props;
-
-// The word "simar", drawn as single strokes. Overlaps get brighter, like layered tracing paper.
-const strokes = [
-  'M84 26C70 6 14 2 12 32C10 62 88 58 88 90C88 122 18 122 4 96',
-  'M125 0V120',
-  'M125 -46V-45',
-  'M165 120V0',
-  'M165 48C165 -12 245 -12 245 48V120',
-  'M245 48C245 -12 325 -12 325 48V120',
-  'M485 60A60 60 0 1 1 485 59.900',
-  'M485 0V120',
-  'M525 120V0',
-  'M525 52C525 14 565 -6 605 6',
-];
 ---
 
 {
   full && (
-    <>
-      <div class="mark" data-reveal data-wordmark>
-        <svg viewBox="-34 -96 678 260" role="img" aria-label="simar">
-          <g class="guides">
-            <path d="M-34 0H644M-34 120H644M-34 60H644M-34 -46H644" />
-            <path d="M12 -96V164M125 -96V164M165 -96V164M245 -96V164M325 -96V164M365 -96V164M485 -96V164M525 -96V164" />
-            <circle cx="425" cy="60" r="60" />
-            <circle cx="205" cy="48" r="40" />
-            <circle cx="285" cy="48" r="40" />
-            <circle cx="48" cy="60" r="60" />
-          </g>
-          <g class="ink">
-            {strokes.map((d, i) => <path d={d} pathLength="1" style={`--n:${i}`} />)}
-          </g>
-        </svg>
-      </div>
-      <figure class="quote" data-reveal>
-        <blockquote>"Success is not final, failure is not fatal: It is the courage to continue that counts."</blockquote>
-        <figcaption>— Winston S. Churchill</figcaption>
-      </figure>
-    </>
+    <figure class="quote" data-reveal>
+      <blockquote>"Success is not final, failure is not fatal: It is the courage to continue that counts."</blockquote>
+      <figcaption>— Winston S. Churchill</figcaption>
+    </figure>
   )
 }
 
@@ -56,46 +25,8 @@ const strokes = [
 </nav>
 
 <style>
-  .mark {
-    margin-top: 90px;
-    color: var(--fg);
-  }
-  .mark svg {
-    width: 100%;
-    height: auto;
-    overflow: visible;
-  }
-  .guides {
-    fill: none;
-    stroke: var(--fg);
-    stroke-width: 0.6;
-    stroke-dasharray: 2 4;
-    opacity: 0.16;
-  }
-  .ink path {
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 28;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    opacity: 0.26;
-    stroke-dasharray: 1;
-    stroke-dashoffset: 0;
-  }
-  .js [data-wordmark] .ink path {
-    stroke-dashoffset: 1;
-    opacity: 0;
-    transition:
-      stroke-dashoffset 1.3s var(--ease),
-      opacity 0.2s;
-    transition-delay: calc(var(--n) * 70ms + 120ms);
-  }
-  .js [data-wordmark].in .ink path {
-    stroke-dashoffset: 0;
-    opacity: 0.26;
-  }
   .quote {
-    margin-top: 60px;
+    margin-top: 90px;
     text-align: center;
     font-family: var(--mono);
   }
@@ -127,12 +58,5 @@ const strokes = [
   }
   .out a:hover {
     color: var(--fg);
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .js [data-wordmark] .ink path {
-      stroke-dashoffset: 0;
-      opacity: 0.26;
-      transition: none;
-    }
   }
 </style>

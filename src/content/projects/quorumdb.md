@@ -2,8 +2,8 @@
 title: QuorumDB
 order: 1
 category: Distributed systems
-blurb: A Redis-compatible database that keeps every piece of data on three computers, with Raft written from scratch in Go.
-summary: A database that keeps every piece of data on three computers, so it keeps working when one of them fails. It speaks the Redis protocol, runs across three Google Cloud data centers, and I wrote the Raft layer that keeps the copies in agreement myself.
+blurb: Redis-compatible key-value store in Go, replicated across three Google Cloud zones with Raft I wrote from scratch.
+summary: A Redis-compatible key-value store in Go. Every write is replicated to three nodes with Raft, which I implemented from scratch, and the cluster runs on GKE with one node in each of three Google Cloud zones. It keeps taking writes when a node or a whole zone goes down.
 pill: 0 lost writes in 100 chaos tests
 repo: https://github.com/simar-s2/quorumdb
 stack: [Go, Raft, Docker, Kubernetes, Terraform, Google Cloud]
@@ -13,7 +13,7 @@ results:
     note: In 100 chaos tests with each node in a different Google Cloud zone.
   - label: Failures injected
     value: '675'
-    note: Crashes, freezes and network splits across zones, all caused while the cluster kept taking writes.
+    note: Crashes, freezes and network splits across zones, all while clients kept writing.
   - label: Writes per second
     value: 38K
     note: Across three Google Cloud zones, with automatic leader failover.
@@ -21,8 +21,8 @@ results:
     value: 116K
     note: Across zones, with no stale reads even when the leader is cut off.
 problem:
-  - One database server is one failure away from an outage. Keeping copies on other computers helps, but copies alone create a harder problem. They have to agree on the order of every write, a leader that has been cut off must not keep answering, and a crash in the middle of a save can't lose anything the client was told was saved.
-  - I wanted to build the part that solves this myself and then try hard to break it. The goal was a number anyone can check, "0 lost out of N", measured while things are failing on purpose.
+  - A single Redis server loses data when it crashes. Copying writes to other machines only helps if the copies agree on the order of writes, a leader that gets cut off stops answering, and a crash halfway through a write can't lose anything the client was told was saved.
+  - QuorumDB handles those cases with Raft, and a chaos test checks all of them while it injects failures.
 pipeline:
   - name: RESP
     note: speaks the Redis protocol
@@ -38,58 +38,52 @@ pipeline:
     note: update the key-value store
 ---
 
-Three nodes run the same Go program. Each one speaks the Redis protocol, so `redis-cli` and every Redis library work with it unchanged. A client can connect to any node, and a follower forwards the request to the leader.
+Each node runs the same Go binary and speaks RESP, so `redis-cli` and existing Redis clients work without changes. A client can connect to any node, and followers forward requests to the leader.
 
-When a save reaches the leader, it appends the entry to its log and sends it to both followers while it fsyncs its own copy. The leader only counts itself toward the majority after that fsync finishes. Once two of the three have the entry on disk, it is committed and applied, and the client gets "OK". Saves that arrive together share one round trip and one fsync.
+On a write, the leader appends the entry to its log and sends it to both followers while it fsyncs its own copy. It only counts its own vote after the fsync. Once two of the three nodes have the entry on disk, it commits, gets applied to the key-value store, and the client gets `OK`. Writes that arrive together share one round trip and one fsync.
 
-Reads go through the leader too. Before answering, it runs a ReadIndex round: a heartbeat that confirms a majority still follows it. A leader that has been cut off can't get that confirmation, so it can't answer with old data.
+Reads also go through the leader. Before answering, it runs a ReadIndex round, a heartbeat that confirms a majority still follows it. A leader that has been cut off can't get that confirmation, so it can't serve stale data.
 
-If the leader goes quiet for about half a second, the followers run a pre-vote and then an election. A node that crashed loads its snapshot, replays its write-ahead log, and catches up from the leader.
+If the followers hear nothing from the leader for about half a second, they run a pre-vote and then an election. A node that restarts loads its snapshot, replays its write-ahead log and catches up from the leader.
 
-On Google Cloud it runs as a Kubernetes StatefulSet on a regional GKE cluster in `us-west1`, one node per zone. Terraform builds everything with `make up` and deletes it with `make down`.
+On Google Cloud the nodes run as a Kubernetes StatefulSet on a regional GKE cluster in `us-west1`, one per zone. Terraform creates everything with `make up` and deletes it with `make down`.
 
-## Decisions
+## Design decisions
 
-- **Three zones, not two.** The database needs two of three nodes. With two zones, one zone holds two nodes, and losing it loses the majority. With three, any one zone can fail.
-- **A StatefulSet, not a Deployment.** A node's data belongs to its identity, so it must come back with the same name and the same disk. A Deployment gives pods random names.
-- **No CPU limit.** Kubernetes enforces a CPU limit by pausing the program, which could delay the leader's heartbeats and cause needless elections. Each node is still guaranteed 1 CPU.
-- **"Ready" means "knows the leader".** A node without a leader can't save anything or give a guaranteed up-to-date answer, so Kubernetes shouldn't send it traffic.
-- **A real crash, not a polite one.** Deleting a pod asks the program to stop, and it saves everything first. The test kills the process instantly, then deletes the pod.
+- **Three zones.** A quorum is two of three nodes. With only two zones, one zone would hold two nodes and losing it would lose the quorum.
+- **StatefulSet.** A node's data belongs to its identity, so a restarted pod needs the same name and the same persistent disk. A Deployment gives pods random names.
+- **No CPU limit.** Kubernetes enforces CPU limits by throttling the process, which can delay heartbeats and start elections for no reason. Each node still requests 1 CPU.
+- **Ready means it knows the leader.** A node without a leader can't commit writes or serve linearizable reads, so Kubernetes shouldn't send it traffic.
+- **Hard kills in the tests.** Deleting a pod lets the process shut down cleanly and flush first. The chaos test kills the process immediately, then deletes the pod.
 
-## How I tested it
+## Testing
 
-The chaos test crashes nodes, freezes them and cuts their network while clients keep working. After each run it checks that every save that got "OK" is still there, runs every answer through the [porcupine](https://github.com/anishathalye/porcupine) linearizability checker, and confirms all three nodes ended with the same data.
+The chaos test crashes, freezes and partitions nodes while clients keep writing. After each test it checks that every acknowledged write is still there, runs the full history through the [porcupine](https://github.com/anishathalye/porcupine) linearizability checker, and confirms all three nodes ended with the same data.
 
 | Across three Google Cloud zones | Result |
 |---|---|
 | Chaos tests where every check passed | **100 / 100** |
-| Saves that got "OK" but were lost | **0** |
+| Writes that got "OK" and were then lost | **0** |
 | Stale reads, even with the leader cut off | **0** |
-| Crashes, freezes and network splits caused | 675 |
+| Crashes, freezes and network splits injected | 675 |
 | Time to a new leader, typical | 817 ms |
 | Time to a new leader, slowest | 2,782 ms |
 | Writes per second | 38K |
 | Reads per second | 116K |
 
-To check the test itself, I also ran it against two versions I broke on purpose: one that says "OK" too early and one that reads local state without asking the majority. It caught both, in 10 of 10 runs each.
-
-## Things I learned
-
-- **Check that the problem you caused really happened.** On Google Cloud, my network cuts silently did nothing, because Google's network ignores the name tag my rules used to pick a pod. Timing how long a new leader took to appear is what revealed it.
-- **Test the old version before blaming the new one.** My speed results dropped after a change. The old version was just as slow, because the laptop's Low Power Mode was on.
-- **A crash test has to be a real crash.** Asking a program to stop lets it save everything first. To test crash recovery, the test has to kill it instantly.
+To make sure the test catches real bugs, I also ran it against two builds I broke on purpose: one that replies `OK` before the write commits, and one that reads local state without a ReadIndex round. It caught both in 10 of 10 runs.
 
 ## Known limits
 
-- There is no password or encryption yet, so it only runs inside the cluster.
-- The number of nodes is set at startup. Asking Kubernetes for five replicas wouldn't add them to the group.
-- A disk can only attach to a computer in its own zone, so if a whole zone goes down, that node waits for the zone to return. The other two keep running.
+- No authentication or TLS yet, so it only runs inside the cluster.
+- Cluster size is fixed at startup. Scaling the StatefulSet doesn't add members to the Raft group.
+- Persistent disks are zonal, so if a zone goes down, that node waits for the zone to come back. The other two keep serving.
 
 ## Run it
 
 ```bash
-make cluster-up                        # start the three computers
-redis-cli -p 6379 SET user:42 alice    # save on one
+make cluster-up                        # start three nodes
+redis-cli -p 6379 SET user:42 alice    # write to one
 redis-cli -p 6381 GET user:42          # read from another: "alice"
 make kill-leader                       # crash the leader; a new one takes over
 make chaos                             # run the chaos test

@@ -198,8 +198,8 @@ export const facemesh: RScene = {
       edges: ['out1>usd', 'out2>usd'],
     },
     {
-      title: 'How it learned',
-      text: 'I take a clean CoMA mesh, cut a hole, add noise and strays, and shuffle the points. The clean mesh is the answer. For new people, expressions only tie the baseline, and I say so.',
+      title: 'How it was trained',
+      text: 'I take a clean CoMA mesh, cut a hole, add noise and strays, and shuffle the points. The clean mesh is the target. On people it never saw, the expression decoder only matches the baseline.',
       on: ['coma', 'enc'],
       edges: ['coma>enc'],
     },

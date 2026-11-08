@@ -60,7 +60,7 @@ export const kbsync: RScene = {
       h: 0.14,
       pin: 0.55,
       glow: 0.55,
-      info: 'What this is all for. While macOS holds it off after inactivity, writes are accepted but do nothing, so kbsync waits and syncs again when the idle flag clears.',
+      info: 'While macOS holds it off after inactivity, writes are accepted but do nothing, so kbsync waits and syncs again when the idle flag clears.',
     },
     {
       id: 'ds',

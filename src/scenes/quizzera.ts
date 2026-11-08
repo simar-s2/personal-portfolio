@@ -68,7 +68,7 @@ export const quizzera: RScene = {
       w: 2.7,
       d: 2.1,
       h: 0.55,
-      info: 'Maps a 0 to 100 score to a recall quality, then schedules the next review. Finished quizzes come back right when you\'re about to forget them, and a failed review resets the schedule.',
+      info: 'Maps a 0 to 100 score to a recall quality, then schedules the next review. A failed review resets the schedule.',
     },
     {
       id: 'g1',
@@ -190,7 +190,7 @@ export const quizzera: RScene = {
     },
     {
       title: 'It comes back later',
-      text: 'Answers are graded, with AI feedback on written ones. SM-2 then schedules the quiz to return right when it\'s about to be forgotten.',
+      text: 'Answers are graded, with AI feedback on written ones. SM-2 then schedules the next review from the score.',
       on: ['db', 'review', 'user'],
       edges: ['db>review', 'review>user'],
     },

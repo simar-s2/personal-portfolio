@@ -40,7 +40,7 @@ export const experience: Job[] = [
     text: "Joining Prof. Keval Vora's lab to work on distributed graph mining systems.",
   },
   {
-    title: '[role title]',
+    title: 'Software Engineer',
     org: 'Develop for Good',
     url: 'https://www.developforgood.org',
     when: 'Oct 2026 – Feb 2027',

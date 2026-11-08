@@ -2,8 +2,8 @@
 title: kbsync
 order: 3
 category: macOS tools
-blurb: Keeps a MacBook's keyboard backlight in step with its screen brightness. Event-driven Swift with no dependencies, using no CPU while idle.
-summary: Dim your screen in a dark room and the keyboard stays blinding. kbsync fixes that. It's a menu bar app and a command-line tool in Swift that reacts to every brightness change in about 7 ms and uses no CPU the rest of the time.
+blurb: Swift menu bar app that keeps a MacBook's keyboard backlight in step with its screen brightness. Event-driven, with no CPU use while idle.
+summary: A menu bar app and command-line tool in Swift that sets a MacBook's keyboard backlight from its screen brightness. It reacts to a brightness change in about 7 ms and uses no CPU between changes.
 pill: 7 ms reaction, 0 idle wakeups
 repo: https://github.com/simar-s2/kbsync
 stack: [Swift, macOS, launchd, Homebrew]
@@ -21,8 +21,8 @@ results:
     value: 0 bytes
     note: Memory was unchanged after a stress test of 20,000 brightness changes.
 problem:
-  - On Apple Silicon MacBooks, the screen and the keyboard backlight are separate. Turn the screen down at night and the keyboard stays bright unless you change it too.
-  - macOS has no public API for either brightness. The obvious way to do this, polling, would have to run ten or more times a second to feel instant, all to watch a value that changes a few times an hour. I wanted something that costs nothing until the brightness actually moves.
+  - On Apple Silicon MacBooks the screen and keyboard backlight are set separately, so turning the screen down at night leaves the keyboard bright.
+  - Neither has a public API. Polling would have to run ten or more times a second to feel instant, for a value that changes a few times an hour, so kbsync waits for change notifications instead.
 pipeline:
   - name: Change
     note: keys, Control Center, auto-brightness
@@ -36,45 +36,45 @@ pipeline:
     note: CoreBrightness sets the keyboard
 ---
 
-kbsync loads two private frameworks at runtime with `dlopen`. DisplayServices has a system-wide notification, so one process hears about it when any other process changes the brightness. CoreBrightness sets the keyboard level through the same API the Control Center slider uses.
+kbsync loads two private frameworks at runtime with `dlopen`. DisplayServices posts a system-wide notification whenever any process changes the screen brightness. CoreBrightness sets the keyboard level through the same API the Control Center slider uses.
 
-It doesn't matter how the screen changes: brightness keys, Control Center, auto-brightness or another app all send the same notification. kbsync runs the new level through a curve the user can shape with `--min`, `--max` and `--gamma`, then fades the keyboard to match.
+Brightness keys, Control Center, auto-brightness and other apps all trigger the same notification. kbsync maps the new level through a curve set with `--min`, `--max` and `--gamma`, then fades the keyboard to match.
 
-While it runs, kbsync turns off "Adjust keyboard brightness in low light" so the light sensor doesn't fight it, and turns the setting back on when it stops. The display's own auto-brightness is untouched, so the keyboard still follows the room, through the display.
+While it runs, kbsync turns off "Adjust keyboard brightness in low light" so the light sensor doesn't fight it, and turns the setting back on when it exits. The display's own auto-brightness stays on, so the keyboard still follows the room through the display.
 
-The same core powers a menu bar app and a command-line tool with a launch agent. The curve, argument parsing and sync rules live in `KBSyncCore`, which has no idea what hardware it's running on.
+The menu bar app and the command-line tool share one core. The curve, argument parsing and sync rules live in `KBSyncCore`, which doesn't touch the hardware.
 
-## Decisions
+## Design decisions
 
-- **Notifications, not polling.** The process sleeps until macOS has something to say, which is why it shows 0 wakeups while idle.
-- **Merge bursts with a GCD data-add source.** A held key or a dragged slider can send hundreds of notifications a second. Each one bumps the source, which merges any burst into one handler call. Before that, a 5,000-change burst queued about 2,500 callbacks. Now it queues a handful.
-- **Check every private selector first.** Each one goes through `responds(to:)`, so a macOS update that changes the API gives a clear error instead of a crash.
-- **Fake hardware for the tests.** The core is unit tested against a fake display and keyboard. The private-framework bridges were tested on the real machine, down to the PWM register.
+- **Event-driven.** The process sleeps until macOS sends a brightness notification, so it has 0 wakeups while idle.
+- **Bursts merged with a GCD data-add source.** A held key or a dragged slider sends hundreds of notifications a second. Each one bumps the source, and GCD merges a burst into one handler call. Before this, a 5,000-change burst queued about 2,500 callbacks. Now it queues a handful.
+- **Every private selector checked first.** Each goes through `responds(to:)`, so a macOS update that changes the API exits with a clear error instead of crashing.
+- **Fake hardware in the tests.** The core is unit tested against a fake display and keyboard. The private-framework bridges were checked on the real machine, down to the PWM register.
 - **The repo is its own Homebrew tap.** One `brew tap` and one `brew install`, with no second repo to keep in sync.
 
-## What I found in the private APIs
+## Private API findings
 
-- **Fade units.** `setBrightness:fadeSpeed:commit:forKeyboard:` is undocumented. I read the backlight's PWM duty cycle from the IORegistry during a `fadeSpeed: 2000` call and saw an even 2.0 second ramp, so the unit is milliseconds.
-- **Idle-off.** While macOS holds the backlight off after inactivity, writes are accepted but don't light the keyboard. kbsync skips writes while the idle flag is set and syncs again when it clears.
-- **Suppressed isn't asleep.** CoreBrightness also reports the backlight as suppressed whenever its level is 0%, and the next write lights it straight back up. I first treated suppressed as asleep, so once the screen hit 0% the keyboard stayed dark for good. Now only the idle flag holds writes back.
-- **The light sensor drifts.** With "Adjust keyboard brightness in low light" on, I watched the keyboard move from 24.5% to 24.0% with nothing else touching it. That's why kbsync turns it off while running.
+- `setBrightness:fadeSpeed:commit:forKeyboard:` is undocumented. I read the backlight's PWM duty cycle from the IORegistry during a `fadeSpeed: 2000` call and measured an even 2.0 second ramp, so the unit is milliseconds.
+- While macOS holds the backlight off after inactivity, writes succeed but have no effect. kbsync skips writes while the idle flag is set and syncs again when it clears.
+- CoreBrightness also reports the backlight as suppressed whenever its level is 0%, and the next write turns it back on. An early version treated suppressed as idle, so the keyboard stayed off once the screen reached 0%. Now only the idle flag blocks writes.
+- With "Adjust keyboard brightness in low light" on, the light sensor moved the keyboard from 24.5% to 24.0% with nothing else touching it. kbsync turns that setting off while it runs.
 
-## How I measured it
+## Measurements
 
-Measured on a MacBook Pro (M1 Pro, macOS 26.6):
+On a MacBook Pro with an M1 Pro, running macOS 26.6:
 
 | Measure | Result |
 |---|---|
 | Idle | 0 wakeups, 0.0% CPU (app and command line) |
 | Memory | Command line about 4.6 MB, app about 13 MB |
 | Leaks | None. Command-line memory was unchanged after 20,000 brightness changes |
-| Each change | About 0.1 ms of CPU |
+| CPU per change | About 0.1 ms |
 | Delay | About 7 ms |
 
 ## Known limits
 
 - The APIs are private, so a macOS update could break it. If something it needs is missing, kbsync exits and says what.
-- I've tested it on an M1 Pro. Other Apple Silicon MacBooks should work, and Intel Macs are untested.
+- Tested on an M1 Pro. Other Apple Silicon MacBooks should work, and Intel Macs are untested.
 - The app isn't signed with a paid Apple Developer ID, so the first launch needs "Open Anyway" in System Settings.
 
 ## Run it
