@@ -12,7 +12,6 @@ export const site = {
   email: 'simarjot2468@gmail.com',
   github: { handle: 'simar-s2', url: 'https://github.com/simar-s2' },
   linkedin: { handle: 'singh-simar', url: 'https://www.linkedin.com/in/singh-simar/' },
-  resume: '[resume PDF]',
   // Website ID from cloud.umami.is. Leave it empty to turn analytics off.
   umamiWebsiteId: '72b47921-77da-4f40-86c2-baa9a47e7026',
 };
