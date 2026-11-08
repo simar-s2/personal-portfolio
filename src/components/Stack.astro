@@ -1,27 +1,54 @@
 ---
+// The skills from my resume. Pointing at one says where on this page I used it.
+import { getCollection } from 'astro:content';
 import Icon from './Icon.astro';
-import { stack } from '../data/site';
+import { experience, stack } from '../data/site';
+
+const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+
+// Names that mean the same skill in different places.
+const alias: Record<string, string[]> = { GCP: ['Google Cloud'], SQL: ['PostgreSQL'] };
+const list = new Intl.ListFormat('en', { type: 'conjunction' });
+const usedIn = (skill: string) => {
+  const names = [skill, ...(alias[skill] ?? [])];
+  const has = (items: string[] = []) => items.some((item) => names.includes(item));
+  const places = [
+    ...projects.filter((p) => has(p.data.stack)).map((p) => p.data.title),
+    ...experience.filter((job) => has(job.tools)).map((job) => job.org),
+  ];
+  return places.length ? `${skill}: ${list.format(places)}` : '';
+};
+const idle = 'Point at a skill to see where I used it.';
 ---
 
 <section class="sec" id="stack" data-reveal>
   <h2>Tech Stack</h2>
-  <div class="groups">
+  <div class="groups" data-stack>
     {
       stack.map(({ group, items }) => (
         <div>
           <p class="group">{group}</p>
           <div class="chips">
-            {items.map((item) => (
-              <span class="chip">
-                <Icon name={item} size={12} />
-                {item}
-              </span>
-            ))}
+            {items.map((item) => {
+              const used = usedIn(item);
+              return used ? (
+                <button class="chip" type="button" data-used={used}>
+                  <Icon name={item} size={12} fallback />
+                  {item}
+                </button>
+              ) : (
+                <span class="chip">
+                  <Icon name={item} size={12} fallback />
+                  {item}
+                </span>
+              );
+            })}
           </div>
         </div>
       ))
     }
   </div>
+  <p class="used" aria-live="polite" data-idle={idle}>{idle}</p>
 </section>
 
 <style>
@@ -35,4 +62,50 @@ import { stack } from '../data/site';
     line-height: 1.43;
     margin-bottom: 8px;
   }
+  button.chip {
+    cursor: default;
+  }
+  button.chip.lit {
+    color: var(--fg);
+    border-color: var(--brand);
+  }
+  .used {
+    min-height: 1.43em;
+    margin-top: 18px;
+    color: var(--muted);
+    font-size: var(--small);
+    line-height: 1.43;
+  }
 </style>
+
+<script>
+  const box = document.querySelector<HTMLElement>('[data-stack]');
+  const line = box?.parentElement?.querySelector<HTMLElement>('.used');
+  if (box && line) {
+    let rest = 0;
+    let lit: HTMLElement | null = null;
+    const show = (chip: HTMLElement) => {
+      clearTimeout(rest);
+      lit?.classList.remove('lit');
+      lit = chip;
+      chip.classList.add('lit');
+      line.textContent = chip.dataset.used!;
+    };
+    // A short pause before going back, so moving between chips doesn't flicker.
+    const hide = () => {
+      clearTimeout(rest);
+      rest = window.setTimeout(() => {
+        lit?.classList.remove('lit');
+        lit = null;
+        line.textContent = line.dataset.idle!;
+      }, 160);
+    };
+    for (const chip of box.querySelectorAll<HTMLElement>('[data-used]')) {
+      chip.addEventListener('pointerenter', () => show(chip));
+      chip.addEventListener('pointerleave', hide);
+      chip.addEventListener('focus', () => show(chip));
+      chip.addEventListener('blur', hide);
+      chip.addEventListener('click', () => show(chip));
+    }
+  }
+</script>
