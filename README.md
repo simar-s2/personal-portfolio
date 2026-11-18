@@ -97,7 +97,7 @@ npm run build && npm run preview   # in one terminal
 npm run posters                    # in another
 ```
 
-Pushing to `main` deploys to GitHub Pages. To use a custom domain, set `SITE_URL` and `BASE_PATH=/` in [the workflow](.github/workflows/deploy.yml).
+Pushing to `main` deploys to Vercel. Every Monday [a workflow](.github/workflows/rebuild.yml) asks Vercel to rebuild, so the activity graph stays current.
 
 ## 📈 Analytics
 

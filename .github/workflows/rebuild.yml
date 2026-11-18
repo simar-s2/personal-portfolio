@@ -1,0 +1,17 @@
+name: Weekly rebuild
+
+on:
+  schedule:
+    - cron: '0 12 * * 1' # rebuild every Monday so the activity graph stays fresh
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ask Vercel to rebuild the site
+        run: curl --fail --silent --show-error -X POST "$DEPLOY_HOOK_URL"
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
