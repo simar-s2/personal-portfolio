@@ -4,9 +4,11 @@
 import { writeFileSync } from 'node:fs';
 
 const token = process.env.GH_TOKEN ?? process.env.GITHUB_TOKEN;
+// The refresh job needs fresh data, so it asks this script to fail instead of keeping the saved copy.
+const mustGetFreshData = process.env.REQUIRE_FRESH_ACTIVITY === '1';
 if (!token) {
   console.log('No GitHub token, keeping the saved activity.');
-  process.exit(0);
+  process.exit(mustGetFreshData ? 1 : 0);
 }
 
 const levels = { NONE: 0, FIRST_QUARTILE: 1, SECOND_QUARTILE: 2, THIRD_QUARTILE: 3, FOURTH_QUARTILE: 4 };
@@ -19,6 +21,7 @@ try {
     headers: { Authorization: `Bearer ${token}`, 'User-Agent': 'personal-portfolio' },
     body: JSON.stringify({ query }),
   });
+  if (!res.ok) throw new Error(`GitHub answered with status ${res.status}`);
   const json = await res.json();
   const calendar = json.data.user.contributionsCollection.contributionCalendar;
   const weeks = calendar.weeks.map((w) => ({
@@ -30,4 +33,5 @@ try {
   console.log(`Saved ${calendar.totalContributions} contributions.`);
 } catch (error) {
   console.log('Keeping the saved activity:', error.message);
+  if (mustGetFreshData) process.exit(1);
 }
