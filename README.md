@@ -97,7 +97,7 @@ npm run build && npm run preview   # in one terminal
 npm run posters                    # in another
 ```
 
-Pushing to `main` deploys to Vercel. Every Monday [a workflow](.github/workflows/rebuild.yml) asks Vercel to rebuild, so the activity graph stays current.
+Pushing to `main` deploys to Vercel. Every 30 minutes [a workflow](.github/workflows/refresh-activity.yml) fetches my GitHub activity and asks Vercel to rebuild only when the graph has changed.
 
 ## 📈 Analytics
 
