@@ -1,0 +1,33 @@
+name: Refresh activity graph
+
+on:
+  schedule:
+    - cron: '*/30 * * * *' # check every 30 minutes
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch the latest activity from GitHub
+        run: node scripts/fetch-activity.mjs
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          REQUIRE_FRESH_ACTIVITY: '1'
+
+      - name: Rebuild the site only if the live graph is out of date
+        run: |
+          curl --fail --silent --show-error https://simarsingh.dev/activity.json --output live-activity.json
+          if diff <(jq --sort-keys . src/data/activity.json) <(jq --sort-keys . live-activity.json) > /dev/null; then
+            echo "The live graph is up to date."
+          else
+            echo "The activity changed, asking Vercel to rebuild."
+            curl --fail --silent --show-error -X POST "$DEPLOY_HOOK_URL"
+          fi
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
